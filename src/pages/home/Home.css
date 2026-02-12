@@ -1,0 +1,145 @@
+.home-page {
+    padding-bottom: 5rem;
+}
+
+.section-header {
+    margin-bottom: 3rem;
+}
+
+.section-header h2 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.section-header p {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.btn-text {
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.categories-section {
+    padding: 4rem 2rem;
+}
+
+.category-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+    /* Space between chips and next section header */
+}
+
+.category-chip {
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-full);
+    border: 1px solid #E5E7EB;
+    background: var(--white);
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.category-chip:hover,
+.category-chip.active {
+    border-color: var(--primary);
+    color: var(--white);
+    background: var(--primary);
+    box-shadow: var(--shadow-bold);
+}
+
+.courses-section {
+    padding: 6rem 2rem 4rem;
+    /* Increased top padding for space from filters */
+}
+
+.courses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 2.5rem;
+    margin-bottom: 2rem;
+}
+
+.cta-content {
+    padding: 3rem;
+    border-radius: var(--radius-lg);
+    text-align: center;
+    background: var(--primary);
+    /* Sticking with brand blue but ensuring contrast */
+    color: var(--white);
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+}
+
+.cta-content h2 {
+    font-size: 3.2rem;
+    margin-bottom: 1.5rem;
+    font-weight: 850;
+}
+
+.cta-content p {
+    font-size: 1.3rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.cta-btns {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+}
+
+.cta-content .btn-primary {
+    background: var(--white);
+    color: var(--primary);
+}
+
+.cta-content .btn-primary:hover {
+    background: #f8fafc;
+    transform: translateY(-2px);
+}
+
+.cta-content .btn-outline {
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    color: var(--white) !important;
+    background: transparent !important;
+}
+
+.cta-content .btn-outline:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: var(--white);
+}
+
+@media (max-width: 768px) {
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .courses-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .cta-content h2 {
+        font-size: 2rem;
+    }
+
+    .cta-btns {
+        flex-direction: column;
+    }
+}

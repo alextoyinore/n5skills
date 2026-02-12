@@ -1,0 +1,162 @@
+export const COURSES = [
+    {
+        id: 1,
+        title: "Complete Web Development Bootcamp 2026",
+        instructor: "Dr. Angela Yu",
+        category: "Development",
+        rating: 4.8,
+        reviews: "12,450",
+        duration: "65 Total Hours",
+        price: 94.99,
+        isFree: false,
+        level: "Beginner",
+        image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+        id: 2,
+        title: "Deep Learning Specialization",
+        instructor: "Andrew Ng",
+        category: "Data Science",
+        rating: 4.9,
+        reviews: "45,210",
+        duration: "120 Total Hours",
+        price: 0,
+        isFree: true,
+        level: "Intermediate",
+        image: "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+        id: 3,
+        title: "UI/UX Design Masterclass: Strategy and Tools",
+        instructor: "Gary Simon",
+        category: "Design",
+        rating: 4.7,
+        reviews: "8,900",
+        duration: "25 Total Hours",
+        price: 49.99,
+        isFree: false,
+        level: "Intermediate",
+        image: "https://images.unsplash.com/photo-1586717791821-3f44a563eb4c?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+        id: 4,
+        title: "Financial Markets & Investment Strategy",
+        instructor: "Robert Shiller",
+        category: "Business",
+        rating: 4.6,
+        reviews: "15,600",
+        duration: "40 Total Hours",
+        price: 79.99,
+        isFree: false,
+        level: "Beginner",
+        image: "https://images.unsplash.com/photo-1611974717484-cd874f60f854?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+        id: 5,
+        title: "The Art of Negotiation",
+        instructor: "Chris Voss",
+        category: "Marketing",
+        rating: 4.9,
+        reviews: "22,100",
+        duration: "15 Total Hours",
+        price: 89.99,
+        isFree: false,
+        level: "Advanced",
+        image: "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+        id: 6,
+        title: "Python for Data Science and Machine Learning",
+        instructor: "Jose Portilla",
+        category: "Development",
+        rating: 4.8,
+        reviews: "85,400",
+        duration: "25 Total Hours",
+        price: 0,
+        isFree: true,
+        level: "Intermediate",
+        image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+        id: 7,
+        title: "Modern React with Redux",
+        instructor: "Stephen Grider",
+        category: "Development",
+        rating: 4.7,
+        reviews: "10,200",
+        duration: "40 Total Hours",
+        price: 54.99,
+        isFree: false,
+        level: "Intermediate",
+        image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+        id: 8,
+        title: "Machine Learning A-Z™: AI, Python & R",
+        instructor: "Kirill Eremenko",
+        category: "Data Science",
+        rating: 4.6,
+        reviews: "30,500",
+        duration: "45 Total Hours",
+        price: 69.99,
+        isFree: false,
+        level: "Intermediate",
+        image: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+        id: 9,
+        title: "Graphic Design Masterclass",
+        instructor: "Lindsay Marsh",
+        category: "Design",
+        rating: 4.8,
+        reviews: "12,100",
+        duration: "30 Total Hours",
+        price: 39.99,
+        isFree: false,
+        level: "Beginner",
+        image: "https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+        id: 10,
+        title: "Business Strategy from Top 1% of Consultants",
+        instructor: "Davis Nguyen",
+        category: "Business",
+        rating: 4.9,
+        reviews: "5,400",
+        duration: "10 Total Hours",
+        price: 129.99,
+        isFree: false,
+        level: "Advanced",
+        image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+        id: 11,
+        title: "Digital Marketing Masterclass",
+        instructor: "Phil Ebiner",
+        category: "Marketing",
+        rating: 4.5,
+        reviews: "18,200",
+        duration: "35 Total Hours",
+        price: 19.99,
+        isFree: false,
+        level: "Beginner",
+        image: "https://images.unsplash.com/photo-1533750516457-a7f992034fce?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+        id: 12,
+        title: "Music Theory Comprehensive",
+        instructor: "Jason Allen",
+        category: "Music",
+        rating: 4.8,
+        reviews: "7,800",
+        duration: "12 Total Hours",
+        price: 29.99,
+        isFree: false,
+        level: "Beginner",
+        image: "https://images.unsplash.com/photo-1507838153414-b4b713384a76?auto=format&fit=crop&q=80&w=800"
+    }
+];
+
+export const CATEGORIES = [
+    "All", "Development", "Data Science", "Design", "Business", "Marketing", "Music"
+];

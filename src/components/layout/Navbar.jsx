@@ -1,0 +1,230 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Menu, X, User, LogIn, ChevronDown, ChevronLeft, BookOpen, Monitor, Palette, Briefcase, TrendingUp, Music } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { CATEGORIES } from '../../constants/mockData';
+import './Navbar.css';
+
+const categoryIcons = {
+  "Development": <Monitor size={20} />,
+  "Data Science": <TrendingUp size={20} />,
+  "Design": <Palette size={20} />,
+  "Business": <Briefcase size={20} />,
+  "Marketing": <BookOpen size={20} />,
+  "Music": <Music size={20} />,
+  "All": <BookOpen size={20} />
+};
+
+const Navbar = () => {
+  const [scrolled, setScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [mobileView, setMobileView] = useState('main'); // 'main' or 'explore'
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
+  const invertedRoutes = [
+    '/about', '/terms', '/privacy', '/cookies',
+    '/subscriptions', '/business', '/government',
+    '/careers', '/contact'
+  ];
+  const isInverted = invertedRoutes.includes(location.pathname);
+  const megaMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 50) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Close menus on route change
+  useEffect(() => {
+    setIsMegaMenuOpen(false);
+    setIsMobileMenuOpen(false);
+    setIsMobileSearchOpen(false);
+    setMobileView('main');
+  }, [location]);
+
+  // Click outside to close
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (megaMenuRef.current && !megaMenuRef.current.contains(event.target)) {
+        setIsMegaMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const toggleMegaMenu = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsMegaMenuOpen(!isMegaMenuOpen);
+  };
+
+  return (
+    <>
+      <nav className={`navbar ${scrolled ? 'scrolled' : ''} ${isMobileMenuOpen ? 'mobile-menu-open' : ''} ${isInverted && !scrolled ? 'inverted' : ''}`}>
+        <div className="container nav-content">
+          <Link to="/" className="logo">
+            <span className="logo-bold">N5</span>SKILLS
+          </Link>
+
+          <div className="search-bar">
+            <Search size={16} className="search-icon" />
+            <input type="text" placeholder="What do you want to learn?" />
+          </div>
+
+          <div className={`nav-links ${isMobileMenuOpen ? 'active' : ''}`}>
+            {isMobileMenuOpen && (
+              <button
+                className="mobile-close-btn"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <X size={28} />
+              </button>
+            )}
+            {mobileView === 'explore' && isMobileMenuOpen ? (
+              <div className="mobile-view-content">
+                <button
+                  className="mobile-back-btn"
+                  onClick={() => setMobileView('main')}
+                >
+                  <ChevronLeft size={20} /> Back to Menu
+                </button>
+                <div className="mobile-categories-list">
+                  <h3>All Categories</h3>
+                  {CATEGORIES.map(cat => (
+                    <Link
+                      key={cat}
+                      to={`/courses?category=${cat}`}
+                      className="mobile-category-item"
+                    >
+                      <span className="cat-icon">{categoryIcons[cat]}</span>
+                      <span className="cat-name">{cat}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <>
+                <div
+                  className="dropdown mega-dropdown"
+                  ref={megaMenuRef}
+                >
+                  <button
+                    className="nav-link dropdown-btn"
+                    onClick={(e) => {
+                      if (window.innerWidth <= 992) {
+                        setMobileView('explore');
+                      } else {
+                        toggleMegaMenu(e);
+                      }
+                    }}
+                  >
+                    Explore <ChevronDown size={14} className={isMegaMenuOpen ? 'rotated' : ''} />
+                  </button>
+
+                  {/* Desktop Mega Menu */}
+                  {isMegaMenuOpen && !isMobileMenuOpen && (
+                    <div className="mega-menu">
+                      <button
+                        className="close-mega"
+                        onClick={() => setIsMegaMenuOpen(false)}
+                      >
+                        <X size={18} />
+                      </button>
+                      <div className="mega-menu-content container">
+                        <div className="mega-menu-grid">
+                          <div className="mega-menu-column main-col">
+                            <h3>Top Categories</h3>
+                            <div className="category-links">
+                              {CATEGORIES.map(cat => (
+                                <Link
+                                  key={cat}
+                                  to={`/courses?category=${cat}`}
+                                  className="mega-category-link"
+                                >
+                                  <span className="cat-icon">{categoryIcons[cat]}</span>
+                                  <div className="cat-info">
+                                    <span className="cat-name">{cat}</span>
+                                    <span className="cat-desc">Browse {cat} courses</span>
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="mega-menu-column promo-col">
+                            <div className="promo-card">
+                              <span className="promo-badge">Featured</span>
+                              <h4>N5 One Membership</h4>
+                              <p>Unlimited access to 8,000+ courses, projects, and certificates.</p>
+                              <Link to="/signup" className="btn btn-primary btn-sm">Join Now</Link>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <Link to="/about" className="nav-link">About</Link>
+                <Link to="#" className="nav-link">For Business</Link>
+
+                <div className="auth-btns">
+                  <Link to="/login" className="btn-login">Log In</Link>
+                  <Link to="/signup" className="btn btn-primary">Join for Free</Link>
+                </div>
+              </>
+            )}
+          </div>
+
+          <button
+            className="mobile-search-toggle"
+            onClick={() => setIsMobileSearchOpen(true)}
+          >
+            <Search size={22} />
+          </button>
+
+          <button
+            className="mobile-toggle"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X /> : <Menu />}
+          </button>
+        </div>
+      </nav>
+
+      {isMobileSearchOpen && (
+        <div className="mobile-search-overlay">
+          <div className="mobile-search-header">
+            <span className="logo">
+              <span className="logo-bold">N5</span>SKILLS
+            </span>
+            <button
+              className="close-search-btn"
+              onClick={() => setIsMobileSearchOpen(false)}
+            >
+              <X size={24} />
+            </button>
+          </div>
+          <div className="mobile-search-input-wrapper">
+            <Search size={24} className="search-icon-mobile" />
+            <input
+              type="text"
+              placeholder="Search for anything..."
+              autoFocus
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+export default Navbar;
