@@ -1,24 +1,121 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PlayCircle, Clock, Award, BookOpen, Search, Bell } from 'lucide-react';
-import { COURSES } from '../../constants/mockData';
+import { PlayCircle, Clock, Award, BookOpen, Search, Bell, Loader2 } from 'lucide-react';
+import { supabase } from '../../utils/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import './LearningDashboard.css';
 
 const LearningDashboard = () => {
     const { user } = useAuth();
-    // Mock enrolled courses
-    const enrolledCourses = COURSES.slice(0, 4).map((c, i) => ({
-        ...c,
-        progress: [75, 40, 15, 60][i],
-        lastAccessed: '2 hours ago',
-        lastLesson: [
-            "Introduction to React Hooks",
-            "Advanced CSS Grid Layouts",
-            "Understanding Asynchronous JavaScript",
-            "Risk Management Strategies"
-        ][i]
-    }));
+    const [enrolledCourses, setEnrolledCourses] = useState([]);
+    const [recommendedCourses, setRecommendedCourses] = useState([]);
+    const [stats, setStats] = useState({
+        coursesInProgress: 0,
+        certificatesEarned: 0,
+        learningTime: '0h'
+    });
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (user) {
+            fetchDashboardData();
+        }
+    }, [user]);
+
+    const fetchDashboardData = async () => {
+        setLoading(true);
+        try {
+            // 1. Fetch enrolled courses with progress
+            const { data: enrollments, error: enrollError } = await supabase
+                .from('enrollments')
+                .select(`
+                    course_id,
+                    courses (
+                        id,
+                        title,
+                        image_url,
+                        categories (name),
+                        course_modules (
+                            id,
+                            course_lessons (id)
+                        )
+                    )
+                `)
+                .eq('user_id', user.id);
+
+            if (enrollError) throw enrollError;
+
+            // 2. Fetch completions to calculate progress
+            const { data: completions, error: compError } = await supabase
+                .from('lesson_completions')
+                .select('lesson_id')
+                .eq('user_id', user.id);
+
+            if (compError) throw compError;
+
+            const completedLessonIds = new Set(completions.map(c => c.lesson_id));
+
+            // Process enrolled courses
+            const processedEnrollments = enrollments.map(en => {
+                const course = en.courses;
+                const allLessons = course.course_modules.flatMap(m => m.course_lessons);
+                const totalLessons = allLessons.length;
+                const completedCount = allLessons.filter(l => completedLessonIds.has(l.id)).length;
+                const progress = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+
+                return {
+                    id: course.id,
+                    title: course.title,
+                    image: course.image_url || 'https://via.placeholder.com/300x170',
+                    category: course.categories?.name || 'Uncategorized',
+                    progress: progress,
+                    lastLesson: 'Introduction' // Placeholder for now, later we can track last accessed lesson
+                };
+            });
+
+            setEnrolledCourses(processedEnrollments);
+            setStats({
+                coursesInProgress: processedEnrollments.filter(c => c.progress < 100).length,
+                certificatesEarned: processedEnrollments.filter(c => c.progress === 100).length,
+                learningTime: '12h' // Placeholder
+            });
+
+            // 3. Fetch recommended courses (excluding enrolled)
+            const enrolledIds = enrollments.map(en => en.course_id);
+            const { data: recs, error: recError } = await supabase
+                .from('courses')
+                .select(`
+                    id,
+                    title,
+                    image_url,
+                    profiles:instructor_id (full_name)
+                `)
+                .eq('status', 'published')
+                .not('id', 'in', `(${enrolledIds.length > 0 ? enrolledIds.join(',') : '0'})`)
+                .limit(3);
+
+            if (recError) throw recError;
+            setRecommendedCourses(recs.map(r => ({
+                id: r.id,
+                title: r.title,
+                image: r.image_url || 'https://via.placeholder.com/150x85',
+                instructor: r.profiles?.full_name || 'Admin'
+            })));
+
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="dashboard-page flex-center" style={{ minHeight: '80vh' }}>
+                <Loader2 className="spinner" size={40} color="var(--primary)" />
+            </div>
+        );
+    }
 
     return (
         <div className="dashboard-page">
@@ -41,21 +138,21 @@ const LearningDashboard = () => {
                     <div className="stat-box glass-card">
                         <BookOpen size={24} color="var(--primary)" />
                         <div>
-                            <h3>12</h3>
+                            <h3>{stats.coursesInProgress}</h3>
                             <p>Courses in progress</p>
                         </div>
                     </div>
                     <div className="stat-box glass-card">
                         <Award size={24} color="var(--secondary)" />
                         <div>
-                            <h3>4</h3>
+                            <h3>{stats.certificatesEarned}</h3>
                             <p>Certificates earned</p>
                         </div>
                     </div>
                     <div className="stat-box glass-card">
                         <Clock size={24} color="var(--success)" />
                         <div>
-                            <h3>45h</h3>
+                            <h3>{stats.learningTime}</h3>
                             <p>Learning time</p>
                         </div>
                     </div>
@@ -92,7 +189,7 @@ const LearningDashboard = () => {
                 <section className="recommendations">
                     <h2>Recommended for you</h2>
                     <div className="rec-grid">
-                        {COURSES.slice(3, 6).map(course => (
+                        {recommendedCourses.map(course => (
                             <Link key={course.id} to={`/course/${course.id}`} className="rec-item">
                                 <img src={course.image} alt={course.title} />
                                 <div className="rec-info">

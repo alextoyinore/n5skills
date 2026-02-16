@@ -1,57 +1,105 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Play, CheckCircle, ChevronLeft, ChevronRight, MessageSquare, FileText, Settings, Maximize, Clock, SkipForward } from 'lucide-react';
+import { Play, CheckCircle, ChevronLeft, ChevronRight, MessageSquare, FileText, Settings, Maximize, Clock, SkipForward, Loader2 } from 'lucide-react';
 import { COURSES } from '../../constants/mockData';
+import { supabase } from '../../utils/supabaseClient';
+import { useAuth } from '../../context/AuthContext';
 import './CoursePlayer.css';
 
 const CoursePlayer = () => {
     const { id } = useParams();
-    const course = COURSES.find(c => c.id === parseInt(id)) || COURSES[0];
-    const [activeLesson, setActiveLesson] = useState(1);
+    const { user } = useAuth();
+    const [course, setCourse] = useState(null);
+    const [activeLesson, setActiveLesson] = useState(null);
+    const [completedLessons, setCompletedLessons] = useState([]);
+    const [curriculum, setCurriculum] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    // Simulations for completion
-    const [completedLessons, setCompletedLessons] = useState([1, 2]);
-
-    const curriculum = [
-        {
-            title: "Module 1: Introduction",
-            lessons: [
-                { id: 1, title: "Welcome & Course Overview", duration: "5:30" },
-                { id: 2, title: "Prerequisites & Setup", duration: "12:45" },
-            ]
-        },
-        {
-            title: "Module 2: Core Concepts",
-            lessons: [
-                { id: 3, title: "Building your first component", duration: "25:00" },
-                { id: 4, title: "State vs Props", duration: "32:15" },
-                { id: 5, title: "Lifecycle Methods Explained", duration: "18:20" },
-            ]
-        },
-        {
-            title: "Module 3: Advanced Patterns",
-            lessons: [
-                { id: 6, title: "Higher Order Components", duration: "45:00" },
-                { id: 7, title: "Render Prop Pattern", duration: "22:10" },
-            ]
+    useEffect(() => {
+        if (id) {
+            fetchCourseAndProgress();
         }
-    ];
+    }, [id, user]);
 
-    const allLessons = curriculum.flatMap(module => module.lessons);
-    const currentLessonData = allLessons.find(l => l.id === activeLesson);
+    const fetchCourseAndProgress = async () => {
+        setLoading(true);
+        try {
+            // 1. Fetch Course & Curriculum
+            const mockCourse = COURSES.find(c => c.id === parseInt(id));
+            let currentCourse = mockCourse;
 
-    const toggleComplete = (id) => {
-        if (completedLessons.includes(id)) {
-            setCompletedLessons(completedLessons.filter(l => l !== id));
-        } else {
-            setCompletedLessons([...completedLessons, id]);
+            if (!mockCourse) {
+                const { data: realCourse } = await supabase
+                    .from('courses')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                currentCourse = realCourse;
+            }
+            setCourse(currentCourse);
+
+            const { data: modules } = await supabase
+                .from('course_modules')
+                .select('*, course_lessons(*)')
+                .eq('course_id', id)
+                .order('order_index');
+
+            if (modules) {
+                const processedCurriculum = modules.map(m => ({
+                    title: m.title,
+                    lessons: m.course_lessons.sort((a, b) => a.order_index - b.order_index)
+                }));
+                setCurriculum(processedCurriculum);
+
+                // Set initial active lesson if none
+                if (!activeLesson && processedCurriculum.length > 0 && processedCurriculum[0].lessons.length > 0) {
+                    setActiveLesson(processedCurriculum[0].lessons[0].id);
+                }
+            }
+
+            // 2. Fetch Progress
+            if (user) {
+                const { data: completions } = await supabase
+                    .from('lesson_completions')
+                    .select('lesson_id')
+                    .eq('user_id', user.id);
+
+                if (completions) {
+                    setCompletedLessons(completions.map(c => c.lesson_id));
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching course player data:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const nextLesson = () => {
-        const nextIndex = allLessons.findIndex(l => l.id === activeLesson) + 1;
-        if (nextIndex < allLessons.length) {
-            setActiveLesson(allLessons[nextIndex].id);
+    const toggleComplete = async (lessonId) => {
+        if (!user) return;
+
+        const isCompleted = completedLessons.includes(lessonId);
+
+        try {
+            if (isCompleted) {
+                const { error } = await supabase
+                    .from('lesson_completions')
+                    .delete()
+                    .eq('user_id', user.id)
+                    .eq('lesson_id', lessonId);
+
+                if (error) throw error;
+                setCompletedLessons(completedLessons.filter(id => id !== lessonId));
+            } else {
+                const { error } = await supabase
+                    .from('lesson_completions')
+                    .insert([{ user_id: user.id, lesson_id: lessonId }]);
+
+                if (error) throw error;
+                setCompletedLessons([...completedLessons, lessonId]);
+            }
+        } catch (error) {
+            console.error('Error toggling completion:', error);
         }
     };
 
@@ -154,6 +202,25 @@ const CoursePlayer = () => {
                 );
             default:
                 return null;
+        }
+    };
+
+    if (loading || !course) {
+        return (
+            <div className="player-page flex-center" style={{ minHeight: '80vh' }}>
+                <Loader2 className="spinner" size={40} color="var(--primary)" />
+            </div>
+        );
+    }
+
+    const allLessons = curriculum.flatMap(module => module.lessons);
+    const activeLessonId = activeLesson || (allLessons.length > 0 ? allLessons[0].id : null);
+    const currentLessonData = allLessons.find(l => l.id === activeLessonId) || allLessons[0];
+
+    const nextLesson = () => {
+        const nextIndex = allLessons.findIndex(l => l.id === activeLessonId) + 1;
+        if (nextIndex < allLessons.length) {
+            setActiveLesson(allLessons[nextIndex].id);
         }
     };
 

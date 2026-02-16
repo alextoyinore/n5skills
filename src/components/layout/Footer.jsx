@@ -1,15 +1,17 @@
 import React from 'react';
 import { Facebook, Twitter, Linkedin, Instagram, Youtube } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useSettings } from '../../context/SettingsContext';
 import './Footer.css';
 
 const Footer = () => {
+    const { settings } = useSettings();
     return (
         <footer className="footer">
             <div className="container footer-grid">
                 <div className="footer-brand">
                     <Link to="/" className="logo logo-white">
-                        <span className="logo-bold">N5</span>SKILLS
+                        {settings.platform_name}
                     </Link>
                     <p>The world's leading platform for professional learning. Learn without limits.</p>
                     <div className="social-links">
@@ -53,7 +55,7 @@ const Footer = () => {
 
             <div className="footer-bottom">
                 <div className="container">
-                    <p>&copy; {new Date().getFullYear()} N5SKILLS Inc. All rights reserved.</p>
+                    <p>&copy; {new Date().getFullYear()} {settings.platform_name} Inc. All rights reserved.</p>
                 </div>
             </div>
         </footer>

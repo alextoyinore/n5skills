@@ -1,33 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Star, Clock, Users, Globe, CheckCircle, PlayCircle, ChevronDown } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Star, Clock, Users, Globe, CheckCircle, PlayCircle, ChevronDown, Loader2 } from 'lucide-react';
 import { COURSES } from '../../constants/mockData';
 import { supabase } from '../../utils/supabaseClient';
+import { useAuth } from '../../context/AuthContext';
 import './CourseDetail.css';
 
 const CourseDetail = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
+    const { user } = useAuth();
     const [course, setCourse] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isRealCourse, setIsRealCourse] = useState(false);
+    const [isEnrolled, setIsEnrolled] = useState(false);
+    const [isEnrolling, setIsEnrolling] = useState(false);
+    const [curriculum, setCurriculum] = useState([]);
 
     useEffect(() => {
-        const fetchCourse = async () => {
-            // First, try to find in mock data
+        const fetchData = async () => {
+            setLoading(true);
+            // 1. Fetch Course Data
             const mockCourse = COURSES.find(c => c.id === parseInt(id));
 
             if (mockCourse) {
                 setCourse(mockCourse);
                 setIsRealCourse(false);
-                setLoading(false);
             } else {
-                // If not in mock data, try Supabase (for admin-created courses)
                 const { data, error } = await supabase
                     .from('courses')
                     .select(`
                         *,
                         categories (name),
-                        profiles:instructor_id (first_name, last_name)
+                        profiles:instructor_id (full_name)
                     `)
                     .eq('id', id)
                     .single();
@@ -35,13 +40,69 @@ const CourseDetail = () => {
                 if (data) {
                     setCourse(data);
                     setIsRealCourse(true);
+
+                    // Fetch real curriculum
+                    const { data: modules } = await supabase
+                        .from('course_modules')
+                        .select('*, course_lessons(*)')
+                        .eq('course_id', id)
+                        .order('order_index');
+
+                    if (modules) {
+                        setCurriculum(modules.map(m => ({
+                            title: m.title,
+                            lessons: m.course_lessons.sort((a, b) => a.order_index - b.order_index)
+                        })));
+                    }
                 }
-                setLoading(false);
             }
+
+            // 2. Check Enrollment if user is logged in
+            if (user) {
+                const { data: enrollment } = await supabase
+                    .from('enrollments')
+                    .select('id')
+                    .eq('course_id', id)
+                    .eq('user_id', user.id)
+                    .single();
+
+                if (enrollment) setIsEnrolled(true);
+            }
+
+            setLoading(false);
         };
 
-        fetchCourse();
-    }, [id]);
+        fetchData();
+    }, [id, user]);
+
+    const handleEnroll = async () => {
+        if (!user) {
+            navigate('/login', { state: { from: `/course/${id}` } });
+            return;
+        }
+
+        if (isEnrolled) {
+            navigate(`/learn/${id}`);
+            return;
+        }
+
+        setIsEnrolling(true);
+        try {
+            const { error } = await supabase
+                .from('enrollments')
+                .insert([{ user_id: user.id, course_id: id }]);
+
+            if (error) throw error;
+            setIsEnrolled(true);
+            alert('Enrolled successfully!');
+            navigate(`/learn/${id}`);
+        } catch (error) {
+            console.error('Enrollment error:', error);
+            alert('Failed to enroll: ' + error.message);
+        } finally {
+            setIsEnrolling(false);
+        }
+    };
 
     if (loading) {
         return <div className="course-detail-page"><div className="container-mid">Loading...</div></div>;
@@ -53,7 +114,7 @@ const CourseDetail = () => {
 
     // Handle both mock and real course data
     const instructorName = isRealCourse
-        ? (course.profiles ? `${course.profiles.first_name} ${course.profiles.last_name}` : 'Unknown Instructor')
+        ? (course.profiles?.full_name || 'Unknown Instructor')
         : course.instructor;
     const categoryName = isRealCourse
         ? (course.categories?.name || 'Uncategorized')
@@ -147,16 +208,34 @@ const CourseDetail = () => {
                     <section className="detail-section">
                         <h2 className="section-title">Curriculum</h2>
                         <div className="curriculum-editorial-list">
-                            {[1, 2, 3, 4, 5, 6].map(i => (
-                                <div key={i} className="curriculum-item">
-                                    <div className="curr-number">0{i}</div>
-                                    <div className="curr-body">
-                                        <h4>Strategic Foundations: Part {i}</h4>
-                                        <p>Understanding the core pillars and architectural patterns required for high-level {categoryName.toLowerCase()}.</p>
+                            {curriculum.length > 0 ? (
+                                curriculum.map((module, mIdx) => (
+                                    <div key={mIdx} className="curriculum-module-group">
+                                        <h3 className="module-title-detail">{module.title}</h3>
+                                        {module.lessons.map((lesson, lIdx) => (
+                                            <div key={lesson.id} className="curriculum-item">
+                                                <div className="curr-number">{lIdx + 1}</div>
+                                                <div className="curr-body">
+                                                    <h4>{lesson.title}</h4>
+                                                    <p>{lesson.content_type === 'video' ? 'Video Lesson' : 'Reading Material'}</p>
+                                                </div>
+                                                <div className="curr-duration">{lesson.duration || '10m'}</div>
+                                            </div>
+                                        ))}
                                     </div>
-                                    <div className="curr-duration">45m</div>
-                                </div>
-                            ))}
+                                ))
+                            ) : (
+                                [1, 2, 3, 4].map(i => (
+                                    <div key={i} className="curriculum-item">
+                                        <div className="curr-number">0{i}</div>
+                                        <div className="curr-body">
+                                            <h4>Strategic Foundations: Part {i}</h4>
+                                            <p>Understanding the core pillars and architectural patterns required for high-level {categoryName.toLowerCase()}.</p>
+                                        </div>
+                                        <div className="curr-duration">45m</div>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </section>
 
@@ -182,9 +261,13 @@ const CourseDetail = () => {
                             {!(isRealCourse ? course.is_free : course.isFree) && <span className="discount-badge">85% OFF</span>}
                         </div>
                         <div className="cta-actions">
-                            <Link to={`/learn/${course.id}`} className="btn btn-primary btn-lg btn-block">
-                                Enroll Now
-                            </Link>
+                            <button
+                                className="btn btn-primary btn-lg btn-block"
+                                onClick={handleEnroll}
+                                disabled={isEnrolling}
+                            >
+                                {isEnrolling ? <Loader2 className="spinner" size={20} /> : (isEnrolled ? 'Go to Course' : 'Enroll Now')}
+                            </button>
                             <button className="btn btn-outline btn-lg btn-block">
                                 Add to Wishlist
                             </button>

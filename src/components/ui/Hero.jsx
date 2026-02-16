@@ -3,10 +3,12 @@ import { motion } from 'framer-motion';
 import { PlayCircle, ArrowRight, BookOpen, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
 import './Hero.css';
 
 const Hero = () => {
     const { user } = useAuth();
+    const { settings } = useSettings();
 
     // Mock recently watched courses (replace with actual data from your backend)
     const recentlyWatched = [

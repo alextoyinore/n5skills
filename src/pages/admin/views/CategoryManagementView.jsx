@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Folder } from 'lucide-react';
 import { supabase } from '../../../utils/supabaseClient';
 
 const CategoryManagementView = () => {
@@ -139,7 +139,7 @@ const CategoryManagementView = () => {
                                 <label>Icon (Emoji or Icon Name)</label>
                                 <input
                                     type="text"
-                                    placeholder="📁"
+                                    placeholder="Folder"
                                     value={newCategory.icon}
                                     onChange={(e) => setNewCategory({ ...newCategory, icon: e.target.value })}
                                 />
@@ -172,7 +172,11 @@ const CategoryManagementView = () => {
                             <tr><td colSpan="4">No categories found. Create one above!</td></tr>
                         ) : categories.map(cat => (
                             <tr key={cat.id}>
-                                <td style={{ fontSize: '1.5rem' }}>{cat.icon || '📁'}</td>
+                                <td>
+                                    <div className="stat-icon" style={{ width: '32px', height: '32px', fontSize: '1rem' }}>
+                                        {cat.icon && cat.icon.length > 2 ? <Folder size={18} /> : (cat.icon || <Folder size={18} />)}
+                                    </div>
+                                </td>
                                 <td style={{ fontWeight: '700' }}>{cat.name}</td>
                                 <td style={{ color: 'var(--text-muted)' }}>{cat.slug}</td>
                                 <td>

@@ -3,6 +3,7 @@ import { Search, Menu, X, User, LogIn, ChevronDown, ChevronLeft, BookOpen, Monit
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { CATEGORIES } from '../../constants/mockData';
 import { useAuth } from '../../context/AuthContext.js';
+import { useSettings } from '../../context/SettingsContext';
 import './Navbar.css';
 
 const categoryIcons = {
@@ -24,6 +25,7 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { settings } = useSettings();
   const isHomePage = location.pathname === '/';
   const invertedRoutes = [
     '/about', '/terms', '/privacy', '/cookies',
@@ -90,7 +92,7 @@ const Navbar = () => {
       <nav className={`navbar ${scrolled ? 'scrolled' : ''} ${isMobileMenuOpen ? 'mobile-menu-open' : ''} ${isMegaMenuOpen ? 'mega-active' : ''} ${isInverted && !scrolled && !isMegaMenuOpen ? 'inverted' : ''}`}>
         <div className="container nav-content">
           <Link to="/" className="logo">
-            <span className="logo-bold">N5</span>SKILLS
+            {settings.platform_name}
           </Link>
 
           <div className="search-bar">
@@ -180,7 +182,7 @@ const Navbar = () => {
                           <div className="mega-menu-column promo-col">
                             <div className="promo-card">
                               <span className="promo-badge">Featured</span>
-                              <h4>N5 One Membership</h4>
+                              <h4>{settings.platform_name} One Membership</h4>
                               <p>Unlimited access to 8,000+ courses, projects, and certificates.</p>
                               <Link to="/signup" className="btn btn-primary btn-sm">Join Now</Link>
                             </div>
@@ -270,7 +272,7 @@ const Navbar = () => {
         <div className="mobile-search-overlay">
           <div className="mobile-search-header">
             <span className="logo">
-              <span className="logo-bold">N5</span>SKILLS
+              {settings.platform_name}
             </span>
             <button
               className="close-search-btn"

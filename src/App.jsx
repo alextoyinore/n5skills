@@ -119,11 +119,15 @@ function AppContent() {
   );
 }
 
+import { SettingsProvider } from './context/SettingsContext';
+
 function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <SettingsProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </SettingsProvider>
   );
 }
 

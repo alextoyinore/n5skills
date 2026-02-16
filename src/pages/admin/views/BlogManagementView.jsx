@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Edit2, Trash2, Loader2, ExternalLink } from 'lucide-react';
+import { Plus, Search, Filter, Edit2, Trash2, Loader2, ExternalLink, FileText, CheckCircle, FilePlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../utils/supabaseClient';
 
@@ -75,21 +75,27 @@ const BlogManagementView = () => {
 
             <div className="stats-grid">
                 <div className="stat-card glass-card">
-                    <span className="stat-icon purple">📝</span>
+                    <span className="stat-icon">
+                        <FileText size={24} />
+                    </span>
                     <div>
                         <p>Total Posts</p>
                         <h3>{stats.total}</h3>
                     </div>
                 </div>
                 <div className="stat-card glass-card">
-                    <span className="stat-icon green">✅</span>
+                    <span className="stat-icon">
+                        <CheckCircle size={24} />
+                    </span>
                     <div>
                         <p>Published</p>
                         <h3>{stats.published}</h3>
                     </div>
                 </div>
                 <div className="stat-card glass-card">
-                    <span className="stat-icon blue">⏳</span>
+                    <span className="stat-icon">
+                        <FilePlus size={24} />
+                    </span>
                     <div>
                         <p>Drafts</p>
                         <h3>{stats.drafts}</h3>

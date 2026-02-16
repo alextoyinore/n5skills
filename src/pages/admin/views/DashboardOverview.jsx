@@ -1,11 +1,82 @@
-import React from 'react';
-import { Search, Bell, Plus } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Search, Bell, Plus, BookOpen, Users, DollarSign, Loader2 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../../utils/supabaseClient';
 
 const DashboardOverview = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const [stats, setStats] = useState({
+        totalCourses: 0,
+        totalStudents: 0,
+        revenue: 0
+    });
+    const [recentEnrollments, setRecentEnrollments] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchDashboardStats();
+    }, []);
+
+    const fetchDashboardStats = async () => {
+        setLoading(true);
+        try {
+            // 1. Total Courses
+            const { count: courseCount } = await supabase
+                .from('courses')
+                .select('*', { count: 'exact', head: true });
+
+            // 2. Total Students (Unique users in enrollments)
+            const { data: enrollmentData } = await supabase
+                .from('enrollments')
+                .select('user_id');
+
+            const uniqueStudents = new Set(enrollmentData?.map(e => e.user_id)).size;
+
+            // 3. Revenue (Sum of price of enrolled courses)
+            const { data: revenueData } = await supabase
+                .from('enrollments')
+                .select(`
+                    id,
+                    courses (price)
+                `);
+
+            const totalRevenue = revenueData?.reduce((sum, en) => sum + (en.courses?.price || 0), 0) || 0;
+
+            setStats({
+                totalCourses: courseCount || 0,
+                totalStudents: uniqueStudents,
+                revenue: totalRevenue
+            });
+
+            // 4. Recent Enrollments
+            const { data: recent } = await supabase
+                .from('enrollments')
+                .select(`
+                    enrolled_at,
+                    profiles:user_id (full_name, email),
+                    courses (title)
+                `)
+                .order('enrolled_at', { ascending: false })
+                .limit(5);
+
+            setRecentEnrollments(recent || []);
+
+        } catch (error) {
+            console.error('Error fetching admin dashboard stats:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex-center" style={{ minHeight: '60vh' }}>
+                <Loader2 className="spinner" size={40} color="var(--primary)" />
+            </div>
+        );
+    }
 
     return (
         <>
@@ -28,24 +99,30 @@ const DashboardOverview = () => {
 
             <div className="stats-grid">
                 <div className="stat-card glass-card">
-                    <span className="stat-icon blue">📚</span>
+                    <span className="stat-icon">
+                        <BookOpen size={24} />
+                    </span>
                     <div>
                         <p>Total Courses</p>
-                        <h3>156</h3>
+                        <h3>{stats.totalCourses}</h3>
                     </div>
                 </div>
                 <div className="stat-card glass-card">
-                    <span className="stat-icon orange">🎓</span>
+                    <span className="stat-icon">
+                        <Users size={24} />
+                    </span>
                     <div>
                         <p>Total Students</p>
-                        <h3>12,450</h3>
+                        <h3>{stats.totalStudents.toLocaleString()}</h3>
                     </div>
                 </div>
                 <div className="stat-card glass-card">
-                    <span className="stat-icon yellow">💰</span>
+                    <span className="stat-icon">
+                        <DollarSign size={24} />
+                    </span>
                     <div>
                         <p>Revenue</p>
-                        <h3>$45,210</h3>
+                        <h3>₦{stats.revenue.toLocaleString()}</h3>
                     </div>
                 </div>
             </div>
@@ -63,24 +140,26 @@ const DashboardOverview = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>Alex Johnson</td>
-                                <td>Web Development Bootcamp</td>
-                                <td>Feb 10, 2026</td>
-                                <td><span className="badge-status success">Active</span></td>
-                            </tr>
-                            <tr>
-                                <td>Sarah Smith</td>
-                                <td>UI/UX Masterclass</td>
-                                <td>Feb 09, 2026</td>
-                                <td><span className="badge-status success">Active</span></td>
-                            </tr>
-                            <tr>
-                                <td>Mike Ross</td>
-                                <td>Deep Learning</td>
-                                <td>Feb 08, 2026</td>
-                                <td><span className="badge-status warning">Pending</span></td>
-                            </tr>
+                            {recentEnrollments.map((en, i) => (
+                                <tr key={i}>
+                                    <td>
+                                        <div className="student-info-cell">
+                                            <p className="student-name">{en.profiles?.full_name || 'Anonymous'}</p>
+                                            <p className="student-email">{en.profiles?.email}</p>
+                                        </div>
+                                    </td>
+                                    <td>{en.courses?.title}</td>
+                                    <td>{new Date(en.enrolled_at).toLocaleDateString()}</td>
+                                    <td><span className="badge-status success">Active</span></td>
+                                </tr>
+                            ))}
+                            {recentEnrollments.length === 0 && (
+                                <tr>
+                                    <td colSpan="4" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                                        No recent enrollments found.
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>

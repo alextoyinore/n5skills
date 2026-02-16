@@ -10,7 +10,8 @@ import {
     Tag,
     Edit3,
     Menu,
-    X
+    X,
+    ExternalLink
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import './AdminDashboard.css';
@@ -105,6 +106,13 @@ const AdminDashboard = () => {
                             <span>{item.label}</span>
                         </li>
                     ))}
+                    <li
+                        onClick={() => window.open('/', '_blank')}
+                        className="open-site-link"
+                    >
+                        <ExternalLink size={20} />
+                        <span>Open Site</span>
+                    </li>
                 </ul>
                 <div className="sidebar-footer">
                     <button className="logout-btn" onClick={handleLogout}>
