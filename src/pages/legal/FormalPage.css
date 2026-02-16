@@ -1,0 +1,56 @@
+.formal-page {
+    padding-bottom: 5rem;
+}
+
+.formal-header {
+    background: var(--primary);
+    color: var(--white);
+    padding: 120px 0 80px;
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.formal-header h1 {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+}
+
+.subtitle {
+    font-size: 1.25rem;
+    opacity: 0.9;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.content-inner {
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.8;
+    color: var(--dark);
+}
+
+.content-inner h2 {
+    font-size: 2rem;
+    margin: 3rem 0 1.5rem;
+    color: var(--primary);
+}
+
+.content-inner p {
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+}
+
+.content-inner ul {
+    margin-bottom: 2rem;
+    padding-left: 1.5rem;
+}
+
+.content-inner li {
+    margin-bottom: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .formal-header h1 {
+        font-size: 2.5rem;
+    }
+}
