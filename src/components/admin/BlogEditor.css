@@ -11,17 +11,22 @@
 }
 
 .tags-input-wrapper {
-    background: #fff;
+    background: #F8FAFC;
     border: 1px solid #E2E8F0;
     border-radius: 8px;
-    padding: 2px 10px;
+    transition: all 0.2s;
+}
+
+.tags-input-wrapper:focus-within {
+    background: #fff;
+    border-color: var(--primary);
 }
 
 .tags-input-wrapper input {
     border: none;
     outline: none;
     width: 100%;
-    padding: 8px 0;
+    padding: 0.75rem 1rem;
     font-size: 0.95rem;
     color: #334155;
     background: transparent;
