@@ -1,44 +1,58 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Calendar, User, ArrowLeft, Facebook, Twitter, Linkedin, Share2 } from 'lucide-react';
+import { Calendar, User, ArrowLeft, Facebook, Twitter, Linkedin, Share2, Loader2 } from 'lucide-react';
+import { supabase } from '../../utils/supabaseClient';
 import './BlogDetail.css';
-
-// Mock post data (in a real app, this would be fetched based on ID)
-const BLOG_POSTS = {
-    "1": {
-        title: "The Future of AI in Professional Learning",
-        content: `
-            <p>Artificial Intelligence is no longer a futuristic concept; it is actively reshaping the landscape of professional education. As we move further into 2026, the integration of AI into learning platforms is providing unprecedented levels of personalization and efficiency.</p>
-            
-            <h2>Personalized Learning Paths</h2>
-            <p>One of the most significant impacts of AI is the ability to create truly personalized learning experiences. Traditional "one-size-fits-all" curriculum is being replaced by dynamic paths that adapt to a learner's pace, existing knowledge, and career goals.</p>
-            
-            <blockquote>
-                "AI isn't just a tool for automation; it's a catalyst for human potential, allowing us to focus on higher-level problem solving while machines handle the rote acquisition of data."
-            </blockquote>
-
-            <h2>Real-time Feedback Loops</h2>
-            <p>Gone are the days of waiting weeks for assessment results. AI-powered systems can now provide instant feedback on coding exercises, design projects, and business simulations, allowing learners to correct mistakes and consolidate knowledge in real-time.</p>
-
-            <p>As we look forward, the challenge for educators and institutions will be to strike the right balance between technological assistance and human-centric mentorship.</p>
-        `,
-        category: "Technology",
-        author: "Dr. Sarah Chen",
-        authorRole: "Director of AI Research",
-        date: "Feb 10, 2026",
-        image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1200",
-        readTime: "6 min read"
-    }
-    // ... add more if needed
-};
 
 const BlogDetail = () => {
     const { id } = useParams();
-    const post = BLOG_POSTS[id] || BLOG_POSTS["1"]; // Fallback for demo
+    const [post, setPost] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, []);
+        fetchPost();
+    }, [id]);
+
+    const fetchPost = async () => {
+        try {
+            setLoading(true);
+            const { data, error } = await supabase
+                .from('blog_posts')
+                .select(`
+                    *,
+                    profiles:author_id (full_name)
+                `)
+                .eq('id', id)
+                .single();
+
+            if (error) throw error;
+            setPost(data);
+        } catch (error) {
+            console.error('Error fetching blog post:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="blog-detail flex-center" style={{ minHeight: '60vh' }}>
+                <Loader2 className="spinner" size={40} color="var(--primary)" />
+            </div>
+        );
+    }
+
+    if (!post) {
+        return (
+            <div className="blog-detail container text-center p-20">
+                <h2>Post not found</h2>
+                <Link to="/blog" className="back-to-blog mt-4 inline-flex items-center gap-2 text-primary font-semibold">
+                    <ArrowLeft size={18} /> Back to Blog
+                </Link>
+            </div>
+        );
+    }
 
     return (
         <article className="blog-detail">
@@ -51,16 +65,16 @@ const BlogDetail = () => {
                     <h1>{post.title}</h1>
                     <div className="blog-detail-meta">
                         <div className="author-info">
-                            <div className="author-avatar">{post.author[0]}</div>
+                            <div className="author-avatar">{post.profiles?.full_name?.charAt(0) || 'A'}</div>
                             <div>
-                                <span className="author-name">{post.author}</span>
-                                <span className="author-role">{post.authorRole}</span>
+                                <span className="author-name">{post.profiles?.full_name || 'Administrator'}</span>
+                                <span className="author-role">Author</span>
                             </div>
                         </div>
                         <div className="post-stats">
-                            <span><Calendar size={14} /> {post.date}</span>
+                            <span><Calendar size={14} /> {new Date(post.created_at).toLocaleDateString()}</span>
                             <span>•</span>
-                            <span>{post.readTime}</span>
+                            <span>{Math.ceil(JSON.stringify(post.content).length / 1000)} min read</span>
                         </div>
                     </div>
                 </div>
@@ -68,14 +82,14 @@ const BlogDetail = () => {
 
             <div className="blog-detail-hero">
                 <div className="container">
-                    <img src={post.image} alt={post.title} />
+                    <img src={post.featured_image || "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1200"} alt={post.title} />
                 </div>
             </div>
 
             <main className="blog-detail-content container narrow">
                 <div
                     className="blog-body"
-                    dangerouslySetInnerHTML={{ __html: post.content }}
+                    dangerouslySetInnerHTML={{ __html: typeof post.content === 'string' ? post.content : (post.content?.html || '') }}
                 />
 
                 <footer className="blog-detail-footer">
@@ -89,10 +103,10 @@ const BlogDetail = () => {
                         </div>
                     </div>
                     <div className="author-card">
-                        <div className="author-card-avatar">{post.author[0]}</div>
+                        <div className="author-card-avatar">{post.profiles?.full_name?.charAt(0) || 'A'}</div>
                         <div className="author-card-info">
-                            <h4>About {post.author}</h4>
-                            <p>Dr. Sarah Chen is a leading expert in educational technology and has spent over a decade researching the intersection of AI and human cognitive development.</p>
+                            <h4>About {post.profiles?.full_name || 'the Author'}</h4>
+                            <p>An expert contributor to the platform, sharing insights and professional expertise on {post.category?.toLowerCase()}.</p>
                         </div>
                     </div>
                 </footer>

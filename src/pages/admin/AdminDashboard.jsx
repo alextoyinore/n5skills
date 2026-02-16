@@ -11,7 +11,9 @@ import {
     Edit3,
     Menu,
     X,
-    ExternalLink
+    ExternalLink,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -23,6 +25,16 @@ const AdminDashboard = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isSidebarOpen, setSidebarOpen] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(() => {
+        const saved = localStorage.getItem('adminSidebarCollapsed');
+        return saved === 'true';
+    });
+
+    const toggleCollapse = () => {
+        const newState = !isCollapsed;
+        setIsCollapsed(newState);
+        localStorage.setItem('adminSidebarCollapsed', newState.toString());
+    };
 
     // Determine active tab based on current path
     const getActiveTab = () => {
@@ -96,15 +108,26 @@ const AdminDashboard = () => {
                 <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
             )}
 
-            <aside className={`admin-sidebar ${isSidebarOpen ? 'open' : ''}`}>
+            <aside className={`admin-sidebar ${isSidebarOpen ? 'open' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
                 <div className="sidebar-header">
                     <div className="sidebar-logo-container">
                         {settings.logo_url ? (
-                            <img src={settings.logo_url} alt={settings.platform_name} className="admin-logo-img" />
+                            <div className="sidebar-logo-img-wrapper">
+                                <img src={settings.logo_url} alt={settings.platform_name} className="admin-logo-img" />
+                                {!isCollapsed && <span className="admin-suffix">Admin</span>}
+                            </div>
                         ) : (
-                            <h3 style={{ letterSpacing: '-0.5px' }}>{formatPlatformName(settings.platform_name)}</h3>
+                            <h3 style={{ letterSpacing: '-0.5px' }}>
+                                {formatPlatformName(settings.platform_name)}
+                                {!isCollapsed && <span className="admin-suffix"> Admin</span>}
+                            </h3>
                         )}
                     </div>
+                    {/* PC Toggle */}
+                    <button className="collapse-toggle" onClick={toggleCollapse}>
+                        {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+                    </button>
+                    {/* Mobile Close */}
                     <button className="sidebar-close-btn" onClick={() => setSidebarOpen(false)}>
                         <X size={20} />
                     </button>
@@ -145,7 +168,7 @@ const AdminDashboard = () => {
                 </div>
             </aside>
 
-            <main className="admin-content">
+            <main className={`admin-content ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
                 <Outlet />
             </main>
         </div>

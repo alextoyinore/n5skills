@@ -25,11 +25,13 @@ const LearningDashboard = () => {
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
-            // 1. Fetch enrolled courses with progress
+            // 1. Fetch enrolled courses with progress and last lesson
             const { data: enrollments, error: enrollError } = await supabase
                 .from('enrollments')
                 .select(`
                     course_id,
+                    last_accessed_at,
+                    last_lesson_id,
                     courses (
                         id,
                         title,
@@ -37,11 +39,12 @@ const LearningDashboard = () => {
                         categories (name),
                         course_modules (
                             id,
-                            course_lessons (id)
+                            course_lessons (id, title)
                         )
                     )
                 `)
-                .eq('user_id', user.id);
+                .eq('user_id', user.id)
+                .order('last_accessed_at', { ascending: false });
 
             if (enrollError) throw enrollError;
 
@@ -63,13 +66,20 @@ const LearningDashboard = () => {
                 const completedCount = allLessons.filter(l => completedLessonIds.has(l.id)).length;
                 const progress = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
+                // Find the title of the last accessed lesson
+                let lastLessonTitle = 'Introduction';
+                if (en.last_lesson_id) {
+                    const lastLesson = allLessons.find(l => l.id === en.last_lesson_id);
+                    if (lastLesson) lastLessonTitle = lastLesson.title;
+                }
+
                 return {
                     id: course.id,
                     title: course.title,
                     image: course.image_url || 'https://via.placeholder.com/300x170',
                     category: course.categories?.name || 'Uncategorized',
                     progress: progress,
-                    lastLesson: 'Introduction' // Placeholder for now, later we can track last accessed lesson
+                    lastLesson: lastLessonTitle
                 };
             });
 
@@ -123,7 +133,7 @@ const LearningDashboard = () => {
                 <header className="dashboard-header">
                     <div className="header-text">
                         <h1>My Learning</h1>
-                        <p>Welcome back, <span className="primary-text">{user?.name?.split(' ')[0] || 'Student'}</span>! You've completed 75% of your weekly goal.</p>
+                        <p>Welcome back, <span className="primary-text">{user?.name?.split(' ')[0] || 'Student'}</span>! Keep up the great work.</p>
                     </div>
                     <div className="header-actions">
                         <div className="search-minimal">
@@ -135,21 +145,21 @@ const LearningDashboard = () => {
                 </header>
 
                 <section className="stats-row">
-                    <div className="stat-box glass-card">
+                    <div className="stat-box glass-card border-0">
                         <BookOpen size={24} color="var(--primary)" />
                         <div>
                             <h3>{stats.coursesInProgress}</h3>
                             <p>Courses in progress</p>
                         </div>
                     </div>
-                    <div className="stat-box glass-card">
+                    <div className="stat-box glass-card border-0">
                         <Award size={24} color="var(--secondary)" />
                         <div>
                             <h3>{stats.certificatesEarned}</h3>
                             <p>Certificates earned</p>
                         </div>
                     </div>
-                    <div className="stat-box glass-card">
+                    <div className="stat-box glass-card border-0">
                         <Clock size={24} color="var(--success)" />
                         <div>
                             <h3>{stats.learningTime}</h3>
@@ -161,45 +171,55 @@ const LearningDashboard = () => {
                 <section className="enrolled-courses">
                     <div className="section-title">
                         <h2>Continue Watching</h2>
-                        <Link to="#" className="view-all">View all</Link>
+                        <Link to="/dashboard/courses" className="view-all">View all</Link>
                     </div>
-                    <div className="dashboard-grid">
-                        {enrolledCourses.map(course => (
-                            <div key={course.id} className="dashboard-card glass-card">
-                                <div className="card-thumb">
-                                    <img src={course.image} alt={course.title} />
-                                    <Link to={`/learn/${course.id}`} className="play-btn"><PlayCircle size={40} /></Link>
-                                </div>
-                                <div className="card-details">
-                                    <span className="category-tag">{course.category}</span>
-                                    <h3>{course.title}</h3>
-                                    <p className="last-lesson-title">Running: {course.lastLesson}</p>
-                                    <div className="progress-container">
-                                        <div className="progress-bar">
-                                            <div className="progress-fill" style={{ width: `${course.progress}%` }}></div>
+
+                    {enrolledCourses.length > 0 ? (
+                        <div className="dashboard-grid">
+                            {enrolledCourses.slice(0, 3).map(course => (
+                                <div key={course.id} className="dashboard-card glass-card border-0">
+                                    <div className="card-thumb">
+                                        <img src={course.image} alt={course.title} />
+                                        <Link to={`/learn/${course.id}`} className="play-btn"><PlayCircle size={40} /></Link>
+                                    </div>
+                                    <div className="card-details">
+                                        <span className="category-tag">{course.category}</span>
+                                        <h3>{course.title}</h3>
+                                        <p className="last-lesson-title">Running: {course.lastLesson}</p>
+                                        <div className="progress-container">
+                                            <div className="progress-bar">
+                                                <div className="progress-fill" style={{ width: `${course.progress}%` }}></div>
+                                            </div>
+                                            <span className="progress-percent">{course.progress}%</span>
                                         </div>
-                                        <span className="progress-percent">{course.progress}%</span>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="no-enrollments py-20 text-center glass-card border-0">
+                            <p className="text-slate-500 mb-4">You haven't enrolled in any courses yet.</p>
+                            <Link to="/courses" className="btn btn-primary">Browse Catalog</Link>
+                        </div>
+                    )}
                 </section>
 
-                <section className="recommendations">
-                    <h2>Recommended for you</h2>
-                    <div className="rec-grid">
-                        {recommendedCourses.map(course => (
-                            <Link key={course.id} to={`/course/${course.id}`} className="rec-item">
-                                <img src={course.image} alt={course.title} />
-                                <div className="rec-info">
-                                    <h4>{course.title}</h4>
-                                    <p>{course.instructor}</p>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                </section>
+                {recommendedCourses.length > 0 && (
+                    <section className="recommendations">
+                        <h2>Recommended for you</h2>
+                        <div className="rec-grid">
+                            {recommendedCourses.map(course => (
+                                <Link key={course.id} to={`/course/${course.id}`} className="rec-item">
+                                    <img src={course.image} alt={course.title} />
+                                    <div className="rec-info">
+                                        <h4>{course.title}</h4>
+                                        <p>{course.instructor}</p>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
+                )}
             </div>
         </div>
     );

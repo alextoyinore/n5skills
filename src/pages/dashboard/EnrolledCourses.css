@@ -1,0 +1,45 @@
+.enrolled-page {
+    background: #F8FAFC;
+    min-height: 100vh;
+}
+
+.enrolled-header .back-link {
+    display: inline-flex;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.course-card-enrolled {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #E2E8F0;
+    transition: all 0.3s ease;
+}
+
+.course-card-enrolled:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -4px rgba(0, 43, 185, 0.1);
+}
+
+.card-thumb-enrolled img {
+    transition: transform 0.5s ease;
+}
+
+.course-card-enrolled:hover .card-thumb-enrolled img {
+    transform: scale(1.05);
+}
+
+.play-overlay {
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(2px);
+}
+
+.progress-bar-fill {
+    box-shadow: 0 0 8px rgba(0, 43, 185, 0.2);
+}
+
+@media (max-width: 768px) {
+    .container.p-10 {
+        padding: 1.5rem;
+    }
+}

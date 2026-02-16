@@ -23,6 +23,7 @@ import CourseDetail from './pages/course/CourseDetail';
 import CourseList from './pages/course/CourseList';
 import LearningDashboard from './pages/dashboard/LearningDashboard';
 import CoursePlayer from './pages/course/CoursePlayer';
+import EnrolledCourses from './pages/dashboard/EnrolledCourses';
 import Subscriptions from './pages/legal/Subscriptions';
 import Business from './pages/legal/Business';
 import Government from './pages/legal/Government';
@@ -74,6 +75,11 @@ function AppContent() {
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <LearningDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/courses" element={
+            <ProtectedRoute>
+              <EnrolledCourses />
             </ProtectedRoute>
           } />
           <Route path="/profile" element={

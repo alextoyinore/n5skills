@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { COURSES, CATEGORIES } from '../../constants/mockData';
 import CourseCard from '../../components/course/CourseCard';
-import { Sliders, X } from 'lucide-react';
+import { Sliders, X, Loader2 } from 'lucide-react';
+import { supabase } from '../../utils/supabaseClient';
 import './CourseList.css';
 
 const CourseList = () => {
@@ -10,18 +10,59 @@ const CourseList = () => {
     const queryParams = new URLSearchParams(location.search);
     const initialCategory = queryParams.get('category') || 'All';
 
+    const [courses, setCourses] = useState([]);
+    const [categories, setCategories] = useState(["All"]);
+    const [loading, setLoading] = useState(true);
     const [activeCategory, setActiveCategory] = useState(initialCategory);
     const [priceFilter, setPriceFilter] = useState('All');
     const [levelFilter, setLevelFilter] = useState('All');
     const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
     useEffect(() => {
+        fetchInitialData();
+    }, []);
+
+    useEffect(() => {
         const category = new URLSearchParams(location.search).get('category') || 'All';
         setActiveCategory(category);
     }, [location.search]);
 
-    const filteredCourses = COURSES.filter(course => {
-        const categoryMatch = activeCategory === 'All' || course.category === activeCategory;
+    const fetchInitialData = async () => {
+        try {
+            setLoading(true);
+
+            // 1. Fetch Categories
+            const { data: catData, error: catError } = await supabase
+                .from('categories')
+                .select('name')
+                .order('name');
+
+            if (catError) throw catError;
+            setCategories(["All", ...catData.map(c => c.name)]);
+
+            // 2. Fetch All Published Courses
+            const { data: courseData, error: courseError } = await supabase
+                .from('courses')
+                .select(`
+                    *,
+                    categories (name),
+                    profiles:instructor_id (full_name)
+                `)
+                .eq('status', 'published')
+                .order('created_at', { ascending: false });
+
+            if (courseError) throw courseError;
+            setCourses(courseData || []);
+
+        } catch (error) {
+            console.error('Error fetching course list:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const filteredCourses = courses.filter(course => {
+        const categoryMatch = activeCategory === 'All' || (course.categories?.name || course.category) === activeCategory;
         const levelMatch = levelFilter === 'All' || course.level === levelFilter;
         const priceMatch = priceFilter === 'All' || (priceFilter === 'Free' ? course.price === 0 : course.price > 0);
         return categoryMatch && levelMatch && priceMatch;
@@ -59,7 +100,7 @@ const CourseList = () => {
                             value={activeCategory}
                             onChange={(e) => setActiveCategory(e.target.value)}
                         >
-                            {CATEGORIES.map(cat => (
+                            {categories.map(cat => (
                                 <option key={cat} value={cat}>{cat}</option>
                             ))}
                         </select>
@@ -100,24 +141,32 @@ const CourseList = () => {
             </aside>
 
             <div className="container course-list-content">
-                <div className="results-info">
-                    Showing {filteredCourses.length} courses
-                </div>
-
-                <main className="courses-main">
-                    <div className="course-list-grid">
-                        {filteredCourses.map(course => (
-                            <CourseCard key={course.id} course={course} />
-                        ))}
+                {loading ? (
+                    <div className="flex-center py-20">
+                        <Loader2 className="spinner" size={40} color="var(--primary)" />
                     </div>
-
-                    {filteredCourses.length === 0 && (
-                        <div className="no-results">
-                            <h2>No courses found</h2>
-                            <p>Try adjusting your filters to find what you're looking for.</p>
+                ) : (
+                    <>
+                        <div className="results-info">
+                            Showing {filteredCourses.length} courses
                         </div>
-                    )}
-                </main>
+
+                        <main className="courses-main">
+                            <div className="course-list-grid">
+                                {filteredCourses.map(course => (
+                                    <CourseCard key={course.id} course={course} />
+                                ))}
+                            </div>
+
+                            {filteredCourses.length === 0 && (
+                                <div className="no-results py-20 text-center glass-card w-full">
+                                    <h2 className="text-xl font-bold mb-2">No courses found</h2>
+                                    <p className="text-slate-500">Try adjusting your filters to find what you're looking for.</p>
+                                </div>
+                            )}
+                        </main>
+                    </>
+                )}
             </div>
         </div>
     );

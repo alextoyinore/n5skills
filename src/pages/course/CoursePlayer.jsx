@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Play, CheckCircle, ChevronLeft, ChevronRight, MessageSquare, FileText, Settings, Maximize, Clock, SkipForward, Loader2 } from 'lucide-react';
-import { COURSES } from '../../constants/mockData';
 import { supabase } from '../../utils/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import './CoursePlayer.css';
@@ -21,43 +20,76 @@ const CoursePlayer = () => {
         }
     }, [id, user]);
 
+    // Track lesson progress whenever activeLesson changes
+    useEffect(() => {
+        if (user && activeLesson && id) {
+            trackProgress(activeLesson);
+        }
+    }, [activeLesson, user, id]);
+
+    const trackProgress = async (lessonId) => {
+        try {
+            const { error } = await supabase
+                .from('enrollments')
+                .update({
+                    last_lesson_id: lessonId,
+                    last_accessed_at: new Date().toISOString()
+                })
+                .eq('user_id', user.id)
+                .eq('course_id', id);
+
+            if (error) console.error('Error tracking progress:', error);
+        } catch (err) {
+            console.error('Progress tracking failed:', err);
+        }
+    };
+
     const fetchCourseAndProgress = async () => {
         setLoading(true);
         try {
-            // 1. Fetch Course & Curriculum
-            const mockCourse = COURSES.find(c => c.id === parseInt(id));
-            let currentCourse = mockCourse;
+            // 1. Fetch Course Data
+            const { data: realCourse, error: courseError } = await supabase
+                .from('courses')
+                .select('*')
+                .eq('id', id)
+                .single();
 
-            if (!mockCourse) {
-                const { data: realCourse } = await supabase
-                    .from('courses')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
-                currentCourse = realCourse;
-            }
-            setCourse(currentCourse);
+            if (courseError) throw courseError;
+            setCourse(realCourse);
 
-            const { data: modules } = await supabase
+            // 2. Fetch Curriculum
+            const { data: modules, error: modulesError } = await supabase
                 .from('course_modules')
                 .select('*, course_lessons(*)')
                 .eq('course_id', id)
                 .order('order_index');
 
+            if (modulesError) throw modulesError;
+
             if (modules) {
                 const processedCurriculum = modules.map(m => ({
+                    id: m.id,
                     title: m.title,
                     lessons: m.course_lessons.sort((a, b) => a.order_index - b.order_index)
                 }));
                 setCurriculum(processedCurriculum);
 
-                // Set initial active lesson if none
-                if (!activeLesson && processedCurriculum.length > 0 && processedCurriculum[0].lessons.length > 0) {
+                // 3. Set Active Lesson (either from enrollment or first lesson)
+                const { data: enrollment } = await supabase
+                    .from('enrollments')
+                    .select('last_lesson_id')
+                    .eq('user_id', user.id)
+                    .eq('course_id', id)
+                    .maybeSingle();
+
+                if (enrollment?.last_lesson_id) {
+                    setActiveLesson(enrollment.last_lesson_id);
+                } else if (processedCurriculum.length > 0 && processedCurriculum[0].lessons.length > 0) {
                     setActiveLesson(processedCurriculum[0].lessons[0].id);
                 }
             }
 
-            // 2. Fetch Progress
+            // 4. Fetch Progress
             if (user) {
                 const { data: completions } = await supabase
                     .from('lesson_completions')
@@ -108,19 +140,27 @@ const CoursePlayer = () => {
     const [isAskingQuestion, setIsAskingQuestion] = useState(false);
 
     const renderTabContent = () => {
+        const lesson = allLessons.find(l => l.id === activeLesson) || allLessons[0];
+
         switch (activeTab) {
             case 'overview':
                 return (
                     <div className="p-tab-panel">
                         <h3>About this Lesson</h3>
-                        <p>This lesson explores the key principles behind {currentLessonData.title.toLowerCase()}. We will look at practical examples and implementation details that you can apply immediately to your projects.</p>
+                        <div className="reading-content mt-4">
+                            {lesson?.reading_content ? (
+                                <div dangerouslySetInnerHTML={{ __html: lesson.reading_content }} />
+                            ) : (
+                                <p>Welcome to <strong>{lesson?.title}</strong>. In this lesson, we'll dive deep into the core concepts and practical applications. Focus on understanding the "why" behind the techniques shown.</p>
+                            )}
+                        </div>
 
                         <div className="resource-section">
                             <h4>Lesson Resources</h4>
-                            <div className="resource-item glass-card">
+                            <div className="resource-item glass-card border-0">
                                 <FileText size={20} />
                                 <div className="res-info">
-                                    <p>Cheat Sheet: {currentLessonData.title}</p>
+                                    <p>Cheat Sheet: {lesson?.title}</p>
                                     <span>PDF Document • 2.4 MB</span>
                                 </div>
                                 <button className="btn-text">Download</button>
@@ -133,7 +173,7 @@ const CoursePlayer = () => {
                     <div className="p-tab-panel">
                         <h3>Downloadable Resources</h3>
                         <div className="resource-grid">
-                            <div className="resource-item glass-card">
+                            <div className="resource-item glass-card border-0">
                                 <FileText size={20} />
                                 <div className="res-info">
                                     <p>Lesson Slides</p>
@@ -141,7 +181,7 @@ const CoursePlayer = () => {
                                 </div>
                                 <button className="btn-text">Download</button>
                             </div>
-                            <div className="resource-item glass-card">
+                            <div className="resource-item glass-card border-0">
                                 <FileText size={20} />
                                 <div className="res-info">
                                     <p>Source Code Assets</p>
@@ -160,7 +200,7 @@ const CoursePlayer = () => {
                                 <h3>Ask a Question</h3>
                                 <button className="btn-text" onClick={() => setIsAskingQuestion(false)}>Back to Discussions</button>
                             </div>
-                            <form className="question-form glass-card" onSubmit={(e) => { e.preventDefault(); setIsAskingQuestion(false); }}>
+                            <form className="question-form glass-card border-0" onSubmit={(e) => { e.preventDefault(); setIsAskingQuestion(false); }}>
                                 <div className="input-group">
                                     <label>Question Title</label>
                                     <input type="text" placeholder="e.g. How do I implement lifecycle methods in functional components?" required />
@@ -183,7 +223,7 @@ const CoursePlayer = () => {
                             <h3>Community Q&A</h3>
                             <button className="btn btn-primary btn-sm" onClick={() => setIsAskingQuestion(true)}>Ask a Question</button>
                         </div>
-                        <div className="discussion-placeholder glass-card">
+                        <div className="discussion-placeholder glass-card border-0">
                             <MessageSquare size={40} />
                             <p>No questions yet for this lesson. Be the first to ask!</p>
                         </div>
@@ -194,7 +234,7 @@ const CoursePlayer = () => {
                     <div className="p-tab-panel">
                         <h3>My Notes</h3>
                         <textarea
-                            className="notes-textarea glass-card"
+                            className="notes-textarea glass-card border-0"
                             placeholder="Type your notes here for this lesson... (Auto-saved)"
                             rows="10"
                         ></textarea>
@@ -233,14 +273,14 @@ const CoursePlayer = () => {
                     </Link>
                     <div className="player-header-title">
                         <h2>{course.title}</h2>
-                        <span className="lesson-info-badge">{currentLessonData.title}</span>
+                        <span className="lesson-info-badge">{currentLessonData?.title}</span>
                     </div>
                     <div className="player-meta">
                         <div className="player-progress">
                             <div className="progress-bar-small">
-                                <div className="progress-fill" style={{ width: `${(completedLessons.length / allLessons.length) * 100}%` }}></div>
+                                <div className="progress-fill" style={{ width: `${(completedLessons.length / Math.max(1, allLessons.length)) * 100}%` }}></div>
                             </div>
-                            <span>{Math.round((completedLessons.length / allLessons.length) * 100)}% Complete</span>
+                            <span>{Math.round((completedLessons.length / Math.max(1, allLessons.length)) * 100)}% Complete</span>
                         </div>
                     </div>
                 </div>
@@ -272,7 +312,7 @@ const CoursePlayer = () => {
                                                 </div>
                                                 <div className="curr-info">
                                                     <p>{lesson.title}</p>
-                                                    <span><Clock size={12} /> {lesson.duration}</span>
+                                                    <span><Clock size={12} /> {lesson.duration || '10m'}</span>
                                                 </div>
                                             </div>
                                         ))}
@@ -285,20 +325,31 @@ const CoursePlayer = () => {
 
                 <div className="player-content">
                     <div className="video-viewport">
-                        <div className="video-mock glass-card">
-                            <img src={course.image} alt="Video Preview" />
-                            <div className="play-overlay">
-                                <Play size={64} fill="currentColor" />
-                            </div>
+                        <div className="video-mock glass-card border-0">
+                            {currentLessonData?.video_url ? (
+                                <iframe
+                                    src={currentLessonData.video_url.replace('watch?v=', 'embed/')}
+                                    className="video-iframe"
+                                    title={currentLessonData.title}
+                                    allowFullScreen
+                                />
+                            ) : (
+                                <>
+                                    <img src={course.image_url || 'https://via.placeholder.com/800x450'} alt="Video Preview" />
+                                    <div className="play-overlay">
+                                        <Play size={64} fill="currentColor" />
+                                    </div>
+                                </>
+                            )}
                             <div className="player-controls">
                                 <div className="ctrl-progress">
-                                    <div className="ctrl-progress-fill" style={{ width: '60%' }}></div>
+                                    <div className="ctrl-progress-fill" style={{ width: '0%' }}></div>
                                 </div>
                                 <div className="ctrl-buttons">
                                     <div className="ctrl-left">
                                         <Play size={20} />
                                         <SkipForward size={20} onClick={nextLesson} />
-                                        <span className="time-display">15:20 / {currentLessonData.duration}</span>
+                                        <span className="time-display">00:00 / {currentLessonData?.duration || '10:00'}</span>
                                     </div>
                                     <div className="ctrl-right">
                                         <Settings size={20} />
@@ -311,7 +362,7 @@ const CoursePlayer = () => {
 
                     <div className="lesson-details">
                         <div className="lesson-actions">
-                            <h1>{currentLessonData.title}</h1>
+                            <h1>{currentLessonData?.title}</h1>
                             <div className="btn-group">
                                 <button
                                     className={`btn ${completedLessons.includes(activeLesson) ? 'btn-success' : 'btn-outline'}`}

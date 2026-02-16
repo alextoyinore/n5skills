@@ -1,50 +1,90 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { PlayCircle, ArrowRight, BookOpen, Clock } from 'lucide-react';
+import { PlayCircle, ArrowRight, BookOpen, Clock, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
+import { supabase } from '../../utils/supabaseClient';
 import './Hero.css';
 
 const Hero = () => {
     const { user } = useAuth();
     const { settings, formatPlatformName } = useSettings();
+    const [recentlyWatched, setRecentlyWatched] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-    // Mock recently watched courses (replace with actual data from your backend)
-    const recentlyWatched = [
-        {
-            id: 1,
-            title: "Advanced React Patterns",
-            progress: 65,
-            thumbnail: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&q=80&w=400",
-            lastWatched: "2 hours ago",
-            currentLesson: "Compound Components & Context"
-        },
-        {
-            id: 2,
-            title: "Node.js Masterclass",
-            progress: 40,
-            thumbnail: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?auto=format&fit=crop&q=80&w=400",
-            lastWatched: "Yesterday",
-            currentLesson: "Streams and Buffers in Depth"
-        },
-        {
-            id: 3,
-            title: "UI/UX Design Fundamentals",
-            progress: 80,
-            thumbnail: "https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&q=80&w=400",
-            lastWatched: "3 days ago",
-            currentLesson: "Color Theory & Applications"
-        },
-        {
-            id: 4,
-            title: "Financial Strategy",
-            progress: 25,
-            thumbnail: "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&q=80&w=400",
-            lastWatched: "5 days ago",
-            currentLesson: "Portfolio Management Basics"
+    useEffect(() => {
+        if (user) {
+            fetchRecentlyWatched();
         }
-    ];
+    }, [user]);
+
+    const fetchRecentlyWatched = async () => {
+        setLoading(true);
+        try {
+            // 1. Fetch enrollments with progress and last lesson
+            const { data: enrollments, error: enrollError } = await supabase
+                .from('enrollments')
+                .select(`
+                    course_id,
+                    last_lesson_id,
+                    courses (
+                        id,
+                        title,
+                        image_url,
+                        course_modules (
+                            id,
+                            course_lessons (id, title)
+                        )
+                    )
+                `)
+                .eq('user_id', user.id)
+                .order('last_accessed_at', { ascending: false })
+                .limit(4);
+
+            if (enrollError) throw enrollError;
+
+            // 2. Fetch completions for progress calculation
+            const { data: completions } = await supabase
+                .from('lesson_completions')
+                .select('lesson_id')
+                .eq('user_id', user.id);
+
+            const completedLessonIds = new Set(completions?.map(c => c.lesson_id) || []);
+
+            // 3. Process matches
+            const processed = enrollments.map(en => {
+                const course = en.courses;
+                if (!course) return null;
+
+                const allLessons = course.course_modules.flatMap(m => m.course_lessons);
+                const totalLessons = allLessons.length;
+                const completedCount = allLessons.filter(l => completedLessonIds.has(l.id)).length;
+                const progress = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+
+                // Find the title of the last accessed lesson
+                let lastLessonTitle = 'Introduction';
+                if (en.last_lesson_id) {
+                    const lastLesson = allLessons.find(l => l.id === en.last_lesson_id);
+                    if (lastLesson) lastLessonTitle = lastLesson.title;
+                }
+
+                return {
+                    id: course.id,
+                    title: course.title,
+                    thumbnail: course.image_url || 'https://via.placeholder.com/400x225',
+                    progress: progress,
+                    currentLesson: lastLessonTitle
+                };
+            }).filter(Boolean);
+
+            setRecentlyWatched(processed);
+        } catch (error) {
+            console.error('Error fetching hero data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     if (user) {
         return (
@@ -65,57 +105,70 @@ const Hero = () => {
                         <p>Continue your learning journey where you left off</p>
                     </motion.div>
 
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.1 }}
-                        className="recently-watched-section"
-                    >
-                        <div className="section-header-inline">
-                            <h2><Clock size={24} /> Continue Watching</h2>
-                            <Link to="/dashboard" className="btn-text">View All →</Link>
+                    {loading ? (
+                        <div className="flex-center py-10">
+                            <Loader2 className="spinner" size={40} color="var(--primary)" />
                         </div>
+                    ) : recentlyWatched.length > 0 ? (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.1 }}
+                            className="recently-watched-section"
+                        >
+                            <div className="section-header-inline">
+                                <h2><Clock size={24} /> Continue Watching</h2>
+                                <Link to="/dashboard" className="btn-text">View All →</Link>
+                            </div>
 
-                        <div className="recent-courses-grid">
-                            {recentlyWatched.map((course, index) => (
-                                <motion.div
-                                    key={course.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.4, delay: 0.2 + index * 0.1 }}
-                                    className="recent-course-card"
-                                >
-                                    <Link to={`/learn/${course.id}`}>
-                                        <div className="course-thumbnail">
-                                            <img src={course.thumbnail} alt={course.title} />
-                                            <div className="play-overlay">
-                                                <PlayCircle size={48} />
+                            <div className="recent-courses-grid">
+                                {recentlyWatched.map((course, index) => (
+                                    <motion.div
+                                        key={course.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.4, delay: 0.2 + index * 0.1 }}
+                                        className="recent-course-card"
+                                    >
+                                        <Link to={`/learn/${course.id}`}>
+                                            <div className="course-thumbnail">
+                                                <img src={course.thumbnail} alt={course.title} />
+                                                <div className="play-overlay">
+                                                    <PlayCircle size={48} />
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="course-info">
-                                            <h3>{course.title}</h3>
-                                            <div className="course-meta">
-                                                <span className="current-lesson">Running: {course.currentLesson}</span>
+                                            <div className="course-info">
+                                                <h3>{course.title}</h3>
+                                                <div className="course-meta">
+                                                    <span className="current-lesson">Running: {course.currentLesson}</span>
+                                                </div>
+                                                <div className="progress-bar">
+                                                    <div
+                                                        className="progress-fill"
+                                                        style={{ width: `${course.progress}%` }}
+                                                    ></div>
+                                                </div>
+                                                <span className="progress-text">{course.progress}% complete</span>
                                             </div>
-                                            <div className="progress-bar">
-                                                <div
-                                                    className="progress-fill"
-                                                    style={{ width: `${course.progress}%` }}
-                                                ></div>
-                                            </div>
-                                            <span className="progress-text">{course.progress}% complete</span>
-                                        </div>
-                                    </Link>
-                                </motion.div>
-                            ))}
-                        </div>
+                                        </Link>
+                                    </motion.div>
+                                ))}
+                            </div>
 
-                        <div className="hero-actions-centered">
-                            <Link to="/courses" className="btn btn-primary">
-                                <BookOpen size={20} /> Browse All Courses
+                            <div className="hero-actions-centered mt-8">
+                                <Link to="/courses" className="btn btn-primary">
+                                    <BookOpen size={20} /> Browse All Courses
+                                </Link>
+                            </div>
+                        </motion.div>
+                    ) : (
+                        <div className="empty-hero-state py-10 text-center">
+                            <p className="mb-6 opacity-80">You haven't started any courses yet. Ready to master a new skill?</p>
+                            <Link to="/courses" className="btn btn-primary btn-lg">
+                                <BookOpen size={20} /> Browse Course Catalog
                             </Link>
                         </div>
-                    </motion.div>
+                    )}
                 </div>
             </div>
         );

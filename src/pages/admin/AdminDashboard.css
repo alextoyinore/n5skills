@@ -20,29 +20,62 @@
     top: 0;
     height: 100vh;
     z-index: 50;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-sidebar.collapsed {
+    width: 80px;
+    padding: 1.5rem 0.5rem;
 }
 
 .admin-content {
     flex: 1;
     /* Ensure content takes full remaining width */
-    width: calc(100% - 260px);
     padding: 2.5rem 3rem;
     overflow-y: auto;
     height: 100vh;
     /* Ensure independent scrolling */
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Sidebar Styling */
 .sidebar-header {
-    margin-bottom: 2.5rem;
+    margin-bottom: 1.5rem;
     padding-left: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+}
+
+.collapsed .sidebar-header {
+    justify-content: center;
+    padding-left: 0;
 }
 
 .sidebar-header h3 {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     font-weight: 800;
     color: var(--primary);
     margin: 0;
+    white-space: nowrap;
+}
+
+.sidebar-logo-img-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.admin-suffix {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748B;
+    background: #F1F5F9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .sidebar-links {
@@ -64,6 +97,17 @@
     cursor: pointer;
     transition: all 0.2s ease;
     margin-bottom: 0.35rem;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.collapsed .sidebar-links li {
+    justify-content: center;
+    padding: 0.75rem;
+}
+
+.collapsed .sidebar-links li span {
+    display: none;
 }
 
 .sidebar-links li:hover {
@@ -131,6 +175,50 @@
     color: #94A3B8;
     margin: 0;
     font-weight: 500;
+}
+
+.collapsed .admin-info,
+.collapsed .logout-btn span {
+    display: none;
+}
+
+.collapsed .admin-profile {
+    justify-content: center;
+    padding: 0.5rem;
+}
+
+.collapsed .logout-btn {
+    padding: 0.75rem;
+}
+
+.collapse-toggle {
+    position: absolute;
+    right: -2.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    background: white;
+    border: 1px solid #E2E8F0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #64748B;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    z-index: 10;
+    transition: all 0.2s ease;
+}
+
+.collapse-toggle:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: #F8FAFC;
+}
+
+.collapsed .collapse-toggle {
+    right: -1rem;
 }
 
 .logout-btn {

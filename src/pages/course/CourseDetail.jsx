@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Star, Clock, Users, Globe, CheckCircle, PlayCircle, ChevronDown, Loader2 } from 'lucide-react';
-import { COURSES } from '../../constants/mockData';
+import { Star, Clock, Users, Globe, CheckCircle, PlayCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../../utils/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import './CourseDetail.css';
@@ -12,7 +11,6 @@ const CourseDetail = () => {
     const { user } = useAuth();
     const [course, setCourse] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [isRealCourse, setIsRealCourse] = useState(false);
     const [isEnrolled, setIsEnrolled] = useState(false);
     const [isEnrolling, setIsEnrolling] = useState(false);
     const [curriculum, setCurriculum] = useState([]);
@@ -20,13 +18,8 @@ const CourseDetail = () => {
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            // 1. Fetch Course Data
-            const mockCourse = COURSES.find(c => c.id === parseInt(id));
-
-            if (mockCourse) {
-                setCourse(mockCourse);
-                setIsRealCourse(false);
-            } else {
+            try {
+                // 1. Fetch Course Data
                 const { data, error } = await supabase
                     .from('courses')
                     .select(`
@@ -37,9 +30,10 @@ const CourseDetail = () => {
                     .eq('id', id)
                     .single();
 
+                if (error) throw error;
+
                 if (data) {
                     setCourse(data);
-                    setIsRealCourse(true);
 
                     // Fetch real curriculum
                     const { data: modules } = await supabase
@@ -55,21 +49,23 @@ const CourseDetail = () => {
                         })));
                     }
                 }
+
+                // 2. Check Enrollment if user is logged in
+                if (user) {
+                    const { data: enrollment } = await supabase
+                        .from('enrollments')
+                        .select('id')
+                        .eq('course_id', id)
+                        .eq('user_id', user.id)
+                        .maybeSingle();
+
+                    if (enrollment) setIsEnrolled(true);
+                }
+            } catch (error) {
+                console.error('Error fetching course details:', error);
+            } finally {
+                setLoading(false);
             }
-
-            // 2. Check Enrollment if user is logged in
-            if (user) {
-                const { data: enrollment } = await supabase
-                    .from('enrollments')
-                    .select('id')
-                    .eq('course_id', id)
-                    .eq('user_id', user.id)
-                    .single();
-
-                if (enrollment) setIsEnrolled(true);
-            }
-
-            setLoading(false);
         };
 
         fetchData();
@@ -94,7 +90,6 @@ const CourseDetail = () => {
 
             if (error) throw error;
             setIsEnrolled(true);
-            alert('Enrolled successfully!');
             navigate(`/learn/${id}`);
         } catch (error) {
             console.error('Enrollment error:', error);
@@ -105,26 +100,29 @@ const CourseDetail = () => {
     };
 
     if (loading) {
-        return <div className="course-detail-page"><div className="container-mid">Loading...</div></div>;
+        return (
+            <div className="course-detail-page flex-center py-40">
+                <Loader2 className="spinner" size={48} color="var(--primary)" />
+                <p className="ml-4 text-xl font-medium text-slate-500">Loading course details...</p>
+            </div>
+        );
     }
 
     if (!course) {
-        return <div className="course-detail-page"><div className="container-mid">Course not found</div></div>;
+        return (
+            <div className="course-detail-page py-40 text-center">
+                <div className="container-mid">
+                    <h2 className="text-2xl font-bold mb-4">Course not found</h2>
+                    <Link to="/courses" className="btn btn-primary">Browse All Courses</Link>
+                </div>
+            </div>
+        );
     }
 
-    // Handle both mock and real course data
-    const instructorName = isRealCourse
-        ? (course.profiles?.full_name || 'Unknown Instructor')
-        : course.instructor;
-    const categoryName = isRealCourse
-        ? (course.categories?.name || 'Uncategorized')
-        : course.category;
-    const courseImage = isRealCourse
-        ? (course.image_url || 'https://via.placeholder.com/800x450')
-        : course.image;
-    const courseDescription = isRealCourse
-        ? (course.description || `Master the art of ${categoryName.toLowerCase()} with our most comprehensive guide.`)
-        : `Master the art of ${categoryName.toLowerCase()} with our most comprehensive guide. Created by ${instructorName} for professional-grade results.`;
+    const instructorName = course.profiles?.full_name || 'Expert Instructor';
+    const categoryName = course.categories?.name || 'Uncategorized';
+    const courseImage = course.image_url || 'https://via.placeholder.com/800x450';
+    const courseDescription = course.description || `Master the art of ${categoryName.toLowerCase()} with our most comprehensive guide.`;
 
     return (
         <div className="course-detail-page">
@@ -140,8 +138,8 @@ const CourseDetail = () => {
                         <div className="meta-group">
                             <div className="rating">
                                 <Star size={18} fill="#FFB800" color="#FFB800" />
-                                <span>{isRealCourse ? '4.8' : course.rating}</span>
-                                <span className="reviews-count">({isRealCourse ? '1,234' : course.reviews} reviews)</span>
+                                <span>4.8</span>
+                                <span className="reviews-count">(1,248 reviews)</span>
                             </div>
                             <div className="students">
                                 <Users size={18} />
@@ -160,7 +158,7 @@ const CourseDetail = () => {
 
             <section className="detail-preview-section">
                 <div className="container-mid">
-                    <div className="preview-frame glass-card">
+                    <div className="preview-frame glass-card border-0">
                         <img src={courseImage} alt={course.title} />
                         <div className="play-btn-large">
                             <PlayCircle size={80} />
@@ -175,7 +173,7 @@ const CourseDetail = () => {
                     <section className="detail-section">
                         <h2 className="section-title">What you'll master</h2>
                         <div className="highlights-editorial-grid">
-                            {isRealCourse && course.highlights && course.highlights.length > 0 ? (
+                            {course.highlights && course.highlights.length > 0 ? (
                                 course.highlights.map((highlight, index) => (
                                     <div key={index} className="highlight-box">
                                         <CheckCircle size={22} color="var(--primary)" />
@@ -190,11 +188,7 @@ const CourseDetail = () => {
                                     </div>
                                     <div className="highlight-box">
                                         <CheckCircle size={22} color="var(--primary)" />
-                                        <p>Building a robust portfolio with 12+ real-world projects that stand out to recruiters.</p>
-                                    </div>
-                                    <div className="highlight-box">
-                                        <CheckCircle size={22} color="var(--primary)" />
-                                        <p>Deep dive into advanced concepts, moving beyond the basics to true mastery.</p>
+                                        <p>Deep dive into advanced concepts, moving beyond the basics to true mastery in {categoryName}.</p>
                                     </div>
                                     <div className="highlight-box">
                                         <CheckCircle size={22} color="var(--primary)" />
@@ -225,28 +219,21 @@ const CourseDetail = () => {
                                     </div>
                                 ))
                             ) : (
-                                [1, 2, 3, 4].map(i => (
-                                    <div key={i} className="curriculum-item">
-                                        <div className="curr-number">0{i}</div>
-                                        <div className="curr-body">
-                                            <h4>Strategic Foundations: Part {i}</h4>
-                                            <p>Understanding the core pillars and architectural patterns required for high-level {categoryName.toLowerCase()}.</p>
-                                        </div>
-                                        <div className="curr-duration">45m</div>
-                                    </div>
-                                ))
+                                <div className="no-curriculum py-10 text-center glass-card">
+                                    <p className="text-slate-500">Curriculum is being updated. Stay tuned!</p>
+                                </div>
                             )}
                         </div>
                     </section>
 
-                    <section className="detail-section instructor-reveal">
+                    <section className="detail-section instructor-reveal border-0">
                         <h2 className="section-title">Your Instructor</h2>
                         <div className="instructor-editorial">
                             <div className="instructor-info-block">
                                 <h3>{instructorName}</h3>
-                                <p className="instructor-tagline">Senior Software Architect & Leading Educator</p>
+                                <p className="instructor-tagline">Lead Educator & Industry Veteran</p>
                                 <p className="instructor-description">
-                                    With over a decade of experience in the technology sector, {instructorName} has helped thousands of students transition into high-paying roles at top-tier companies. Their teaching philosophy focuses on practical application and deep conceptual understanding.
+                                    With years of professional experience in {categoryName.toLowerCase()}, {instructorName} has helped thousands of students achieve their career goals. Their teaching approach bridge the gap between complex theory and real-world application.
                                 </p>
                             </div>
                         </div>
@@ -254,11 +241,11 @@ const CourseDetail = () => {
                 </main>
 
                 <aside className="detail-sidebar-editorial">
-                    <div className="sticky-cta glass-card">
+                    <div className="sticky-cta glass-card border-0">
                         <div className="cta-pricing">
                             <span className="current-price">₦{course.price?.toLocaleString()}</span>
-                            {!(isRealCourse ? course.is_free : course.isFree) && <span className="original-price">₦319,984</span>}
-                            {!(isRealCourse ? course.is_free : course.isFree) && <span className="discount-badge">85% OFF</span>}
+                            {!course.is_free && <span className="original-price">₦319,984</span>}
+                            {!course.is_free && <span className="discount-badge">85% OFF</span>}
                         </div>
                         <div className="cta-actions">
                             <button
@@ -273,7 +260,7 @@ const CourseDetail = () => {
                             </button>
                         </div>
                         <ul className="cta-features">
-                            <li><Clock size={16} /> 65+ Hours of Video</li>
+                            <li><Clock size={16} /> Lifetime Access</li>
                             <li><Globe size={16} /> English & Subtitles</li>
                             <li><CheckCircle size={16} /> Certificate of Completion</li>
                         </ul>
