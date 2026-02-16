@@ -15,6 +15,16 @@
 .footer-brand .logo-white {
     color: var(--white);
     margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.footer-logo-img {
+    height: 45px;
+    width: auto;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+    margin-bottom: 0.5rem;
 }
 
 .footer-brand p {

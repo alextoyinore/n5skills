@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { UserPlus, Mail, Lock, User, ArrowRight, Sparkles, Laptop, Globe, Loader2, Github, Eye, EyeOff } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
 import './Login.css'; // Reusing some base styles
 
 const Signup = () => {
@@ -12,6 +13,7 @@ const Signup = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const { signup, signInWithOAuth, emailLoading, googleLoading, githubLoading, user, loading } = useAuth();
+    const { settings, formatPlatformName } = useSettings();
     const navigate = useNavigate();
 
     // Remove race-condition prone useEffect. 
@@ -61,7 +63,11 @@ const Signup = () => {
                     </div>
                     <div className="visual-content">
                         <Link to="/" className="branding-logo">
-                            <span className="logo-bold">N5</span>SKILLS
+                            {settings.logo_url ? (
+                                <img src={settings.logo_url} alt={settings.platform_name} className="auth-logo-img" />
+                            ) : (
+                                formatPlatformName(settings.platform_name)
+                            )}
                         </Link>
                         <h2>Join the Next <br />Generation.</h2>
                         <p>Unlock premium content, project-based learning, and a global network of ambitious professionals.</p>

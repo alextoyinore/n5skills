@@ -85,8 +85,8 @@ button {
   color: var(--secondary);
 }
 
-.primary-text {
-  color: var(--primary);
+.logo {
+  letter-spacing: -0.5px;
 }
 
 .glass-card {

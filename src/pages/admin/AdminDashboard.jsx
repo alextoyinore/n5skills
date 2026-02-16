@@ -14,10 +14,12 @@ import {
     ExternalLink
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
     const { user, logout } = useAuth();
+    const { settings, formatPlatformName } = useSettings();
     const navigate = useNavigate();
     const location = useLocation();
     const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -77,7 +79,13 @@ const AdminDashboard = () => {
                 <button className="mobile-menu-btn" onClick={toggleSidebar}>
                     <Menu size={24} />
                 </button>
-                <div className="mobile-logo">Admin Panel</div>
+                <div className="mobile-logo">
+                    {settings.logo_url ? (
+                        <img src={settings.logo_url} alt={settings.platform_name} className="admin-logo-img" />
+                    ) : (
+                        formatPlatformName(settings.platform_name)
+                    )}
+                </div>
                 <div className="mobile-avatar">
                     {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
                 </div>
@@ -90,7 +98,13 @@ const AdminDashboard = () => {
 
             <aside className={`admin-sidebar ${isSidebarOpen ? 'open' : ''}`}>
                 <div className="sidebar-header">
-                    <h3>Admin Panel</h3>
+                    <div className="sidebar-logo-container">
+                        {settings.logo_url ? (
+                            <img src={settings.logo_url} alt={settings.platform_name} className="admin-logo-img" />
+                        ) : (
+                            <h3 style={{ letterSpacing: '-0.5px' }}>{formatPlatformName(settings.platform_name)}</h3>
+                        )}
+                    </div>
                     <button className="sidebar-close-btn" onClick={() => setSidebarOpen(false)}>
                         <X size={20} />
                     </button>

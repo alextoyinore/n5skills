@@ -51,8 +51,31 @@ export const SettingsProvider = ({ children }) => {
         };
     }, []);
 
+    const formatPlatformName = (name) => {
+        if (!name) return null;
+        const words = name.trim().split(/\s+/);
+        if (words.length === 1) {
+            const mid = Math.ceil(name.length / 2);
+            const firstHalf = name.slice(0, mid);
+            const secondHalf = name.slice(mid);
+            return (
+                <>
+                    <span className="logo-bold">{firstHalf}</span>{secondHalf}
+                </>
+            );
+        } else {
+            const firstWord = words[0];
+            const rest = words.slice(1).join(' ');
+            return (
+                <>
+                    <span className="logo-bold">{firstWord}</span> {rest}
+                </>
+            );
+        }
+    };
+
     return (
-        <SettingsContext.Provider value={{ settings, loading, fetchSettings }}>
+        <SettingsContext.Provider value={{ settings, loading, fetchSettings, formatPlatformName }}>
             {children}
         </SettingsContext.Provider>
     );

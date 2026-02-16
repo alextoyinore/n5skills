@@ -33,6 +33,7 @@ import Blog from './pages/blog/Blog';
 import BlogDetail from './pages/blog/BlogDetail';
 import Profile from './pages/profile/Profile';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import { SettingsProvider } from './context/SettingsContext';
 import './App.css';
 
 import AdminLogin from './pages/auth/AdminLogin';
@@ -118,8 +119,6 @@ function AppContent() {
     </div>
   );
 }
-
-import { SettingsProvider } from './context/SettingsContext';
 
 function App() {
   return (

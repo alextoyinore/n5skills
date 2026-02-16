@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { LogIn, Mail, Lock, ArrowRight, ShieldCheck, Code, Users, Star, Loader2, Github, Eye, EyeOff } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
 import './Login.css';
 
 const Login = () => {
@@ -11,6 +12,7 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const { login, signInWithOAuth, emailLoading, googleLoading, githubLoading, user, loading } = useAuth();
+    const { settings, formatPlatformName } = useSettings();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -59,7 +61,11 @@ const Login = () => {
                     </div>
                     <div className="visual-content">
                         <Link to="/" className="branding-logo">
-                            <span className="logo-bold">N5</span>SKILLS
+                            {settings.logo_url ? (
+                                <img src={settings.logo_url} alt={settings.platform_name} className="auth-logo-img" />
+                            ) : (
+                                formatPlatformName(settings.platform_name)
+                            )}
                         </Link>
                         <h2>Elevate Your <br />Expertise.</h2>
                         <p>Access your curated learning catalog and continue where you left off. Your journey to mastery begins here.</p>
@@ -196,7 +202,7 @@ const Login = () => {
                             </button>
 
                             <p className="signup-text">
-                                New to N5SKILLS? <Link to="/signup">Join for free</Link>
+                                New to {settings.platform_name}? <Link to="/signup">Join for free</Link>
                             </p>
                         </form>
                     </div>

@@ -8,7 +8,7 @@ import './Hero.css';
 
 const Hero = () => {
     const { user } = useAuth();
-    const { settings } = useSettings();
+    const { settings, formatPlatformName } = useSettings();
 
     // Mock recently watched courses (replace with actual data from your backend)
     const recentlyWatched = [

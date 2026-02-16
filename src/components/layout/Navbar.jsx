@@ -25,7 +25,7 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { settings } = useSettings();
+  const { settings, formatPlatformName } = useSettings();
   const isHomePage = location.pathname === '/';
   const invertedRoutes = [
     '/about', '/terms', '/privacy', '/cookies',
@@ -92,7 +92,11 @@ const Navbar = () => {
       <nav className={`navbar ${scrolled ? 'scrolled' : ''} ${isMobileMenuOpen ? 'mobile-menu-open' : ''} ${isMegaMenuOpen ? 'mega-active' : ''} ${isInverted && !scrolled && !isMegaMenuOpen ? 'inverted' : ''}`}>
         <div className="container nav-content">
           <Link to="/" className="logo">
-            {settings.platform_name}
+            {settings.logo_url ? (
+              <img src={settings.logo_url} alt={settings.platform_name} className="navbar-logo-img" />
+            ) : (
+              formatPlatformName(settings.platform_name)
+            )}
           </Link>
 
           <div className="search-bar">
@@ -272,7 +276,11 @@ const Navbar = () => {
         <div className="mobile-search-overlay">
           <div className="mobile-search-header">
             <span className="logo">
-              {settings.platform_name}
+              {settings.logo_url ? (
+                <img src={settings.logo_url} alt={settings.platform_name} className="navbar-logo-img" />
+              ) : (
+                formatPlatformName(settings.platform_name)
+              )}
             </span>
             <button
               className="close-search-btn"

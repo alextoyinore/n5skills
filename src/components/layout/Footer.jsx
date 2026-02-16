@@ -5,13 +5,17 @@ import { useSettings } from '../../context/SettingsContext';
 import './Footer.css';
 
 const Footer = () => {
-    const { settings } = useSettings();
+    const { settings, formatPlatformName } = useSettings();
     return (
         <footer className="footer">
             <div className="container footer-grid">
                 <div className="footer-brand">
                     <Link to="/" className="logo logo-white">
-                        {settings.platform_name}
+                        {settings.logo_url ? (
+                            <img src={settings.logo_url} alt={settings.platform_name} className="footer-logo-img" />
+                        ) : (
+                            formatPlatformName(settings.platform_name)
+                        )}
                     </Link>
                     <p>The world's leading platform for professional learning. Learn without limits.</p>
                     <div className="social-links">

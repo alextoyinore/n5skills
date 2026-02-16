@@ -126,10 +126,20 @@
 }
 
 .branding-logo {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 300;
     color: #fff;
-    letter-spacing: 2px;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+}
+
+.auth-logo-img {
+    height: 40px;
+    width: auto;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+    margin-bottom: 0.5rem;
 }
 
 .branding-logo .logo-bold {
