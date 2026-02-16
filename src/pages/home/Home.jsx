@@ -45,21 +45,19 @@ const Home = () => {
     const fetchCoursesByCategory = async (category) => {
         setFetchLoading(true);
         try {
+            const selectQuery = category === "All"
+                ? "*, categories(name), profiles:instructor_id(full_name)"
+                : "*, categories!inner(name), profiles:instructor_id(full_name)";
+
             let query = supabase
                 .from('courses')
-                .select(`
-                    *,
-                    categories (name),
-                    profiles:instructor_id (full_name)
-                `)
+                .select(selectQuery)
                 .eq('status', 'published')
                 .order('created_at', { ascending: false })
                 .limit(8);
 
             if (category !== "All") {
-                // If it's a specific category, we need to filter by the joined table field
-                // In PostgREST, we can use 'categories.name'.eq if we use !inner or just filter on the related table
-                query = query.filter('categories.name', 'eq', category);
+                query = query.eq('categories.name', category);
             }
 
             const { data: courseData, error: courseError } = await query;

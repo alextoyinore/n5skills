@@ -435,6 +435,21 @@
     margin-top: 2rem;
 }
 
+.empty-hero-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.empty-hero-state p {
+    max-width: 650px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 @media (max-width: 768px) {
     .personalized-welcome h1 {
         font-size: 2rem;

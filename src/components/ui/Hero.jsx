@@ -101,7 +101,7 @@ const Hero = () => {
                         transition={{ duration: 0.6 }}
                         className="personalized-welcome"
                     >
-                        <h1>Welcome back, <span className="primary-text">{user.name.split(' ')[0]}</span>! 👋</h1>
+                        <h1>Welcome back, <span className="primary-text">{user.name.split(' ')[0]}</span></h1>
                         <p>Continue your learning journey where you left off</p>
                     </motion.div>
 
@@ -163,10 +163,12 @@ const Hero = () => {
                         </motion.div>
                     ) : (
                         <div className="empty-hero-state py-10 text-center">
-                            <p className="mb-6 opacity-80">You haven't started any courses yet. Ready to master a new skill?</p>
-                            <Link to="/courses" className="btn btn-primary btn-lg">
-                                <BookOpen size={20} /> Browse Course Catalog
-                            </Link>
+                            <p className="mb-6 opacity-80">
+                                You haven't started any courses yet. Ready to master a new skill?{" "}
+                                <Link to="/courses" className="primary-text font-bold hover:underline">
+                                    Browse our course catalog →
+                                </Link>
+                            </p>
                         </div>
                     )}
                 </div>
