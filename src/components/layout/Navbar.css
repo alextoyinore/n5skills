@@ -59,11 +59,11 @@
     outline: none !important;
     width: 100%;
     padding: 0.4rem 0.5rem 0.4rem 2.5rem;
-    /* Reduced height */
     border-radius: 100px;
-    /* Full rounded corners */
-    border: 1px solid #E2E8F0;
-    background: #F8FAFC;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(248, 250, 252, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     font-family: inherit;
     font-size: 0.9rem;
     transition: var(--transition);
@@ -71,10 +71,9 @@
 
 .search-bar input:focus {
     border-color: var(--primary);
-    background: #F8FAFC;
-    /* Keep grey bg on focus */
-    box-shadow: none;
-    /* Remove focus shadow */
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: none;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
 }
 
 .search-icon {
@@ -314,6 +313,22 @@
 
 .navbar.inverted:not(.scrolled) .btn-login:hover {
     background: rgba(255, 255, 255, 0.1);
+}
+
+.navbar.inverted:not(.scrolled) .search-bar input {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--white);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.navbar.inverted:not(.scrolled) .search-bar input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.navbar.inverted:not(.scrolled) .search-icon {
+    color: rgba(255, 255, 255, 0.7);
 }
 
 .nav-link:hover {

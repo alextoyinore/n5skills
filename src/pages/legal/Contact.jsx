@@ -1,7 +1,9 @@
 import React from 'react';
 import FormalPage from './FormalPage';
+import { useSettings } from '../../context/SettingsContext';
 
 const Contact = () => {
+    const { settings } = useSettings();
     const content = (
         <>
             <section>
@@ -16,8 +18,8 @@ const Contact = () => {
 
             <section>
                 <h2>Sales Inquiries</h2>
-                <p>Interested in Uwise for your business or government organization? Contact our sales team to schedule a demo and discuss custom pricing options.</p>
-                <p>Email: sales@uwise.com</p>
+                <p>Interested in {settings.platform_name} for your business or government organization? Contact our sales team to schedule a demo and discuss custom pricing options.</p>
+                <p>Email: sales@{settings.platform_name.toLowerCase().replace(/\s+/g, '')}.com</p>
             </section>
 
             <section>

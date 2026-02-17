@@ -1,12 +1,14 @@
 import React from 'react';
 import FormalPage from './FormalPage';
+import { useSettings } from '../../context/SettingsContext';
 
 const Government = () => {
+    const { settings } = useSettings();
     const content = (
         <>
             <section>
                 <h2>Modernizing Public Service</h2>
-                <p>Uwise partners with government agencies to bridge the digital skills gap and prepare the public workforce for the challenges of the 21st century.</p>
+                <p>{settings.platform_name} partners with government agencies to bridge the digital skills gap and prepare the public workforce for the challenges of the 21st century.</p>
             </section>
 
             <section>
@@ -29,7 +31,7 @@ const Government = () => {
 
     return (
         <FormalPage
-            title="Uwise for Government"
+            title={`${settings.platform_name} for Government`}
             subtitle="Building a future-ready public sector workforce."
             content={content}
         />

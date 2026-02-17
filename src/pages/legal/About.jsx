@@ -1,20 +1,22 @@
 import React from 'react';
 import FormalPage from './FormalPage';
+import { useSettings } from '../../context/SettingsContext';
 
 const About = () => {
+    const { settings } = useSettings();
     const content = (
         <>
             <h2>Our Mission</h2>
             <p>
-                At Uwise, we believe that education is a fundamental human right. Our mission is to provide
+                At {settings.platform_name}, we believe that education is a fundamental human right. Our mission is to provide
                 unlimited access to world-class learning, empowering individuals to transform their lives
                 and communities through knowledge.
             </p>
 
             <h2>Who We Are</h2>
             <p>
-                Founded in 2026, Uwise has grown from a small startup to a global leader in online education.
-                We partner with over 100 top universities and industry leaders to bring the best learning
+                Founded in 2025, {settings.platform_name} has grown to be a global leader in online education.
+                We partner with top universities and industry leaders to bring the best learning
                 experiences to students everywhere.
             </p>
 
@@ -29,8 +31,8 @@ const About = () => {
 
     return (
         <FormalPage
-            title="About Uwise"
-            subtitle="Empowering learners worldwide since 2026"
+            title={`About ${settings.platform_name}`}
+            subtitle="Empowering learners worldwide since 2025"
             content={content}
         />
     );
