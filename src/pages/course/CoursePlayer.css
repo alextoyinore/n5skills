@@ -363,11 +363,28 @@
 .curriculum-sidebar {
     width: 380px;
     border-right: 1px solid #E2E8F0;
-    background: #F8FAFC;
+    /* background: #F8FAFC; */
     /* Slightly darker background for sidebar */
 }
 
-/* ... existing styles ... */
+
+.sidebar-sticky {
+    position: sticky;
+    top: 73px;
+    height: calc(100vh - 73px);
+    overflow-y: auto;
+}
+
+.curriculum-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #E2E8F0;
+    background: #fff;
+    /* Ensure header has background */
+}
+
+.curriculum-module {
+    border-bottom: 1px solid #F1F5F9;
+}
 
 .module-title {
     padding: 1rem 1.5rem;
