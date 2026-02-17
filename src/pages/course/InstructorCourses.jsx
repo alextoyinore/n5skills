@@ -31,8 +31,7 @@ const InstructorCourses = () => {
                     .from('courses')
                     .select(`
                         *,
-                        categories(name),
-                        profiles:instructor_id(full_name)
+                        categories(name)
                     `)
                     .eq('instructor_id', id)
                     .eq('status', 'published')
@@ -101,6 +100,10 @@ const InstructorCourses = () => {
                                 </div>
                             </div>
 
+                            <div className="instructor-bio">
+                                <p>{instructor.bio || "Dedicated instructor sharing years of industry experience to help students master new skills and advance their careers."}</p>
+                            </div>
+
                             <div className="instructor-socials">
                                 <a href={`mailto:${instructor.email}`} className="social-icon"><Mail size={20} /></a>
                                 {instructor.website && <a href={instructor.website} target="_blank" rel="noreferrer" className="social-icon"><Globe size={20} /></a>}
@@ -112,35 +115,26 @@ const InstructorCourses = () => {
                 </div>
             </section>
 
-            <div className="container instructor-content-layout">
-                <aside className="instructor-sidebar-bio">
-                    <div className="glass-card p-6 border-0">
-                        <h3>About the Instructor</h3>
-                        <p>{instructor.bio || "Dedicated instructor sharing years of industry experience to help students master new skills and advance their careers."}</p>
-                    </div>
-                </aside>
+            <main className="instructor-catalog container">
+                <div className="catalog-header">
+                    <h2>Courses by {instructor.full_name}</h2>
+                    <span className="results-count">Showing {courses.length} courses</span>
+                </div>
 
-                <main className="instructor-main-catalog">
-                    <div className="catalog-header">
-                        <h2>Courses by {instructor.full_name}</h2>
-                        <span className="results-count">Showing {courses.length} courses</span>
-                    </div>
+                <div className="course-list-grid">
+                    {courses.map(course => (
+                        <CourseCard key={course.id} course={course} />
+                    ))}
+                </div>
 
-                    <div className="course-list-grid">
-                        {courses.map(course => (
-                            <CourseCard key={course.id} course={course} />
-                        ))}
+                {courses.length === 0 && (
+                    <div className="no-courses glass-card border-0 p-10 text-center">
+                        <PlayCircle size={48} className="mx-auto mb-4 opacity-20" />
+                        <h3>No courses yet</h3>
+                        <p>This instructor hasn't published any courses yet.</p>
                     </div>
-
-                    {courses.length === 0 && (
-                        <div className="no-courses glass-card border-0 p-10 text-center">
-                            <PlayCircle size={48} className="mx-auto mb-4 opacity-20" />
-                            <h3>No courses yet</h3>
-                            <p>This instructor hasn't published any courses yet.</p>
-                        </div>
-                    )}
-                </main>
-            </div>
+                )}
+            </main>
         </div>
     );
 };
