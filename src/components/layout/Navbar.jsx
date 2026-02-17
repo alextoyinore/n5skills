@@ -27,12 +27,16 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { settings, formatPlatformName } = useSettings();
   const isHomePage = location.pathname === '/';
-  const invertedRoutes = [
+  const invertedPaths = [
     '/about', '/terms', '/privacy', '/cookies',
     '/subscriptions', '/business', '/government',
     '/careers', '/contact'
   ];
-  const isInverted = invertedRoutes.includes(location.pathname);
+  const invertedPrefixes = ['/blog', '/instructor'];
+
+  const isInverted =
+    invertedPaths.includes(location.pathname) ||
+    invertedPrefixes.some(prefix => location.pathname.startsWith(prefix));
   const megaMenuRef = useRef(null);
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);

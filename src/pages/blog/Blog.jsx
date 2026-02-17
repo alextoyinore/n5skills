@@ -6,16 +6,40 @@ import './Blog.css';
 
 const Blog = () => {
     const [posts, setPosts] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [activeCategory, setActiveCategory] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [fetchingPosts, setFetchingPosts] = useState(false);
 
     useEffect(() => {
-        fetchPosts();
+        const loadInitialData = async () => {
+            setLoading(true);
+            await Promise.all([
+                fetchCategories(),
+                fetchPosts()
+            ]);
+            setLoading(false);
+        };
+        loadInitialData();
     }, []);
 
-    const fetchPosts = async () => {
+    const fetchCategories = async () => {
         try {
-            setLoading(true);
             const { data, error } = await supabase
+                .from('categories')
+                .select('*')
+                .order('name');
+            if (error) throw error;
+            setCategories(data || []);
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+        }
+    };
+
+    const fetchPosts = async (categoryName = null) => {
+        try {
+            setFetchingPosts(true);
+            let query = supabase
                 .from('blog_posts')
                 .select(`
                     *,
@@ -24,13 +48,24 @@ const Blog = () => {
                 .eq('status', 'published')
                 .order('created_at', { ascending: false });
 
+            if (categoryName) {
+                query = query.eq('category', categoryName);
+            }
+
+            const { data, error } = await query;
+
             if (error) throw error;
             setPosts(data || []);
         } catch (error) {
             console.error('Error fetching blog posts:', error);
         } finally {
-            setLoading(false);
+            setFetchingPosts(false);
         }
+    };
+
+    const handleCategoryClick = (categoryName) => {
+        setActiveCategory(categoryName);
+        fetchPosts(categoryName);
     };
 
     return (
@@ -86,7 +121,7 @@ const Blog = () => {
                 <aside className="blog-sidebar">
                     <div className="sidebar-widget">
                         <h3>Subscribe to Newsletter</h3>
-                        <p>Get the latest articles and course updates delivered to your inbox.</p>
+                        <p style={{ marginBottom: '1rem' }}>Get the latest articles and course updates delivered to your inbox.</p>
                         <div className="subscribe-form">
                             <input type="email" placeholder="Email address" />
                             <button className="btn btn-primary">Subscribe</button>
@@ -96,11 +131,24 @@ const Blog = () => {
                     <div className="sidebar-widget">
                         <h3>Categories</h3>
                         <ul className="category-list">
-                            <li><Link to="#">Technology</Link></li>
-                            <li><Link to="#">Design</Link></li>
-                            <li><Link to="#">Business</Link></li>
-                            <li><Link to="#">Product</Link></li>
-                            <li><Link to="#">Marketing</Link></li>
+                            <li>
+                                <button
+                                    className={`category-filter-btn ${!activeCategory ? 'active' : ''}`}
+                                    onClick={() => handleCategoryClick(null)}
+                                >
+                                    All Posts
+                                </button>
+                            </li>
+                            {categories.map(cat => (
+                                <li key={cat.id}>
+                                    <button
+                                        className={`category-filter-btn ${activeCategory === cat.name ? 'active' : ''}`}
+                                        onClick={() => handleCategoryClick(cat.name)}
+                                    >
+                                        {cat.name}
+                                    </button>
+                                </li>
+                            ))}
                         </ul>
                     </div>
                 </aside>

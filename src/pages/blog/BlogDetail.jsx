@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, User, ArrowLeft, Facebook, Twitter, Linkedin, Share2, Loader2 } from 'lucide-react';
 import { supabase } from '../../utils/supabaseClient';
+import BlogRenderer from '../../components/blog/BlogRenderer';
 import './BlogDetail.css';
 
 const BlogDetail = () => {
@@ -63,6 +64,7 @@ const BlogDetail = () => {
                     </Link>
                     <span className="blog-detail-category">{post.category}</span>
                     <h1>{post.title}</h1>
+                    {post.excerpt && <p className="blog-detail-excerpt">{post.excerpt}</p>}
                     <div className="blog-detail-meta">
                         <div className="author-info">
                             <div className="author-avatar">{post.profiles?.full_name?.charAt(0) || 'A'}</div>
@@ -87,10 +89,7 @@ const BlogDetail = () => {
             </div>
 
             <main className="blog-detail-content container narrow">
-                <div
-                    className="blog-body"
-                    dangerouslySetInnerHTML={{ __html: typeof post.content === 'string' ? post.content : (post.content?.html || '') }}
-                />
+                <BlogRenderer data={post.content} />
 
                 <footer className="blog-detail-footer">
                     <div className="share-section">
