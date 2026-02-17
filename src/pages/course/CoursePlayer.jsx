@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Play, CheckCircle, ChevronLeft, ChevronRight, MessageSquare, FileText, Settings, Maximize, Clock, SkipForward, Loader2, Menu, X, LayoutDashboard } from 'lucide-react';
+import { Play, CheckCircle, ChevronLeft, ChevronRight, MessageSquare, FileText, Settings, Maximize, Clock, SkipForward, Loader2, Menu, X, LayoutDashboard, BarChart, Calendar, Mail, Twitter, Linkedin, Github, Globe } from 'lucide-react';
 import { supabase } from '../../utils/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import './CoursePlayer.css';
@@ -13,7 +13,13 @@ const CoursePlayer = () => {
     const [completedLessons, setCompletedLessons] = useState([]);
     const [curriculum, setCurriculum] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [instructor, setInstructor] = useState(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    const [resources, setResources] = useState([]);
+    const [discussions, setDiscussions] = useState([]);
+    const [userNote, setUserNote] = useState('');
+    const [noteSaving, setNoteSaving] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -21,12 +27,44 @@ const CoursePlayer = () => {
         }
     }, [id, user]);
 
-    // Track lesson progress whenever activeLesson changes
+    // Track lesson progress & fetch details whenever activeLesson changes
     useEffect(() => {
         if (user && activeLesson && id) {
             trackProgress(activeLesson);
+            fetchLessonDetails(activeLesson);
         }
     }, [activeLesson, user, id]);
+
+    const fetchLessonDetails = async (lessonId) => {
+        try {
+            // 1. Fetch Resources
+            const { data: resData } = await supabase
+                .from('lesson_resources')
+                .select('*')
+                .eq('lesson_id', lessonId);
+            setResources(resData || []);
+
+            // 2. Fetch Discussions
+            const { data: discData } = await supabase
+                .from('lesson_discussions')
+                .select('*, profiles:user_id(full_name, avatar_url)')
+                .eq('lesson_id', lessonId)
+                .order('created_at', { ascending: false });
+            setDiscussions(discData || []);
+
+            // 3. Fetch User Note
+            const { data: noteData } = await supabase
+                .from('lesson_notes')
+                .select('content')
+                .eq('lesson_id', lessonId)
+                .eq('user_id', user.id)
+                .maybeSingle();
+            setUserNote(noteData?.content || '');
+
+        } catch (error) {
+            console.error('Error fetching lesson details:', error);
+        }
+    };
 
     const trackProgress = async (lessonId) => {
         try {
@@ -57,6 +95,16 @@ const CoursePlayer = () => {
 
             if (courseError) throw courseError;
             setCourse(realCourse);
+
+            // Fetch Instructor Data
+            if (realCourse.instructor_id) {
+                const { data: instructorData } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', realCourse.instructor_id)
+                    .single();
+                setInstructor(instructorData);
+            }
 
             // 2. Fetch Curriculum
             const { data: modules, error: modulesError } = await supabase
@@ -136,6 +184,51 @@ const CoursePlayer = () => {
         }
     };
 
+    const handleSaveNote = async (content) => {
+        setUserNote(content);
+        setNoteSaving(true);
+        try {
+            const { error } = await supabase
+                .from('lesson_notes')
+                .upsert({
+                    user_id: user.id,
+                    lesson_id: activeLesson,
+                    content: content,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'user_id, lesson_id' });
+
+            if (error) throw error;
+        } catch (error) {
+            console.error('Error saving note:', error);
+        } finally {
+            setTimeout(() => setNoteSaving(false), 1000);
+        }
+    };
+
+    const handlePostQuestion = async (e) => {
+        e.preventDefault();
+        const title = e.target.title.value;
+        const content = e.target.content.value;
+
+        try {
+            const { error } = await supabase
+                .from('lesson_discussions')
+                .insert([{
+                    lesson_id: activeLesson,
+                    user_id: user.id,
+                    title,
+                    content
+                }]);
+
+            if (error) throw error;
+            setIsAskingQuestion(false);
+            fetchLessonDetails(activeLesson); // Refresh discussions
+        } catch (error) {
+            console.error('Error posting question:', error);
+            alert('Failed to post question. Please try again.');
+        }
+    };
+
     const [activeTab, setActiveTab] = useState('overview');
 
     const [isAskingQuestion, setIsAskingQuestion] = useState(false);
@@ -156,15 +249,111 @@ const CoursePlayer = () => {
                             )}
                         </div>
 
-                        <div className="resource-section">
-                            <h4>Lesson Resources</h4>
-                            <div className="resource-item glass-card border-0">
-                                <FileText size={20} />
-                                <div className="res-info">
-                                    <p>Cheat Sheet: {lesson?.title}</p>
-                                    <span>PDF Document • 2.4 MB</span>
+
+                    </div>
+                );
+            case 'info':
+                return (
+                    <div className="p-tab-panel">
+                        <h3>About this Course</h3>
+                        <p className="mt-2" style={{ lineHeight: '1.7', color: 'var(--text-secondary)', fontSize: '1.05rem' }}>
+                            {course?.description || 'No description available for this course.'}
+                        </p>
+
+                        <div className="course-meta-grid">
+                            <div className="meta-box glass-card border-0">
+                                <div className="meta-label">
+                                    <BarChart size={18} />
+                                    Level
                                 </div>
-                                <button className="btn-text">Download</button>
+                                <div className="meta-value">{course?.level || 'All Levels'}</div>
+                            </div>
+
+                            <div className="meta-box glass-card border-0">
+                                <div className="meta-label">
+                                    <Clock size={18} />
+                                    Duration
+                                </div>
+                                <div className="meta-value">{course?.duration || 'Unknown'}</div>
+                            </div>
+
+                            <div className="meta-box glass-card border-0">
+                                <div className="meta-label">
+                                    <Calendar size={18} />
+                                    Last Updated
+                                </div>
+                                <div className="meta-value">
+                                    {course?.updated_at ? new Date(course.updated_at).toLocaleDateString() : 'N/A'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            case 'instructor':
+                if (!instructor) {
+                    return (
+                        <div className="p-tab-panel">
+                            <h3>Instructor</h3>
+                            <div className="d-flex align-items-center gap-3 text-muted mt-4">
+                                <Loader2 className="spinner" size={20} />
+                                <span>Loading instructor profile...</span>
+                            </div>
+                        </div>
+                    );
+                }
+                return (
+                    <div className="p-tab-panel">
+                        <h3>Instructor</h3>
+
+                        <div className="instructor-card glass-card border-0">
+                            <div className="instructor-header">
+                                <div className="instructor-avatar-large">
+                                    {instructor?.avatar_url ? (
+                                        <img src={instructor.avatar_url} alt={instructor.full_name} />
+                                    ) : (
+                                        <div className="instructor-initials">
+                                            {instructor?.full_name?.charAt(0) || 'I'}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="instructor-info">
+                                    <h4>{instructor?.full_name || 'Instructor'}</h4>
+                                    <div className="instructor-email">
+                                        <Mail size={16} />
+                                        {instructor?.email}
+                                    </div>
+
+                                    <div className="instructor-socials">
+                                        {instructor?.website && (
+                                            <a href={instructor.website} target="_blank" rel="noopener noreferrer" className="social-link website" title="Website">
+                                                <Globe size={18} />
+                                            </a>
+                                        )}
+                                        {instructor?.socials?.twitter && (
+                                            <a href={`https://twitter.com/${instructor.socials.twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="social-link twitter" title="Twitter">
+                                                <Twitter size={18} />
+                                            </a>
+                                        )}
+                                        {instructor?.socials?.linkedin && (
+                                            <a href={instructor.socials.linkedin.startsWith('http') ? instructor.socials.linkedin : `https://linkedin.com/in/${instructor.socials.linkedin}`} target="_blank" rel="noopener noreferrer" className="social-link linkedin" title="LinkedIn">
+                                                <Linkedin size={18} />
+                                            </a>
+                                        )}
+                                        {instructor?.socials?.github && (
+                                            <a href={`https://github.com/${instructor.socials.github}`} target="_blank" rel="noopener noreferrer" className="social-link github" title="GitHub">
+                                                <Github size={18} />
+                                            </a>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="instructor-bio-section">
+                                <h5>About the Instructor</h5>
+                                <div className="instructor-bio-content">
+                                    {instructor?.bio || 'No bio available for this instructor.'}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -173,24 +362,25 @@ const CoursePlayer = () => {
                 return (
                     <div className="p-tab-panel">
                         <h3>Downloadable Resources</h3>
-                        <div className="resource-grid">
-                            <div className="resource-item glass-card border-0">
-                                <FileText size={20} />
-                                <div className="res-info">
-                                    <p>Lesson Slides</p>
-                                    <span>PDF • 5.1 MB</span>
-                                </div>
-                                <button className="btn-text">Download</button>
+                        {resources.length > 0 ? (
+                            <div className="resource-grid">
+                                {resources.map((res) => (
+                                    <div key={res.id} className="resource-item glass-card border-0">
+                                        <FileText size={20} />
+                                        <div className="res-info">
+                                            <p>{res.title}</p>
+                                            <span>{res.file_type} • {res.file_size}</span>
+                                        </div>
+                                        <a href={res.file_url} target="_blank" rel="noopener noreferrer" className="btn-text">Download</a>
+                                    </div>
+                                ))}
                             </div>
-                            <div className="resource-item glass-card border-0">
-                                <FileText size={20} />
-                                <div className="res-info">
-                                    <p>Source Code Assets</p>
-                                    <span>ZIP • 12.8 MB</span>
-                                </div>
-                                <button className="btn-text">Download</button>
+                        ) : (
+                            <div className="discussion-placeholder glass-card border-0">
+                                <FileText size={40} />
+                                <p>No resources available for this lesson.</p>
                             </div>
-                        </div>
+                        )}
                     </div>
                 );
             case 'discussions':
@@ -201,14 +391,14 @@ const CoursePlayer = () => {
                                 <h3>Ask a Question</h3>
                                 <button className="btn-text" onClick={() => setIsAskingQuestion(false)}>Back to Discussions</button>
                             </div>
-                            <form className="question-form glass-card border-0" onSubmit={(e) => { e.preventDefault(); setIsAskingQuestion(false); }}>
+                            <form className="question-form glass-card border-0" onSubmit={handlePostQuestion}>
                                 <div className="input-group">
                                     <label>Question Title</label>
-                                    <input type="text" placeholder="e.g. How do I implement lifecycle methods in functional components?" required />
+                                    <input name="title" type="text" placeholder="e.g. How do I implement lifecycle methods in functional components?" required />
                                 </div>
                                 <div className="input-group">
                                     <label>Details</label>
-                                    <textarea placeholder="Describe your problem in detail..." rows="6" required></textarea>
+                                    <textarea name="content" placeholder="Describe your problem in detail..." rows="6" required></textarea>
                                 </div>
                                 <div className="form-actions">
                                     <button type="button" className="btn btn-outline" onClick={() => setIsAskingQuestion(false)}>Cancel</button>
@@ -224,20 +414,41 @@ const CoursePlayer = () => {
                             <h3>Community Q&A</h3>
                             <button className="btn btn-primary btn-sm" onClick={() => setIsAskingQuestion(true)}>Ask a Question</button>
                         </div>
-                        <div className="discussion-placeholder glass-card border-0">
-                            <MessageSquare size={40} />
-                            <p>No questions yet for this lesson. Be the first to ask!</p>
-                        </div>
+                        {discussions.length > 0 ? (
+                            <div className="discussions-list d-flex flex-column gap-3">
+                                {discussions.map((disc) => (
+                                    <div key={disc.id} className="discussion-item glass-card border-0 p-4">
+                                        <h4 className="mb-2">{disc.title || 'No Title'}</h4>
+                                        <p className="mb-3 text-secondary">{disc.content}</p>
+                                        <div className="d-flex align-items-center gap-3 text-muted" style={{ fontSize: '0.9rem' }}>
+                                            <span>{disc.profiles?.full_name || 'User'}</span>
+                                            <span>•</span>
+                                            <span>{new Date(disc.created_at).toLocaleDateString()}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="discussion-placeholder glass-card border-0">
+                                <MessageSquare size={40} />
+                                <p>No questions yet for this lesson. Be the first to ask!</p>
+                            </div>
+                        )}
                     </div>
                 );
             case 'notes':
                 return (
                     <div className="p-tab-panel">
-                        <h3>My Notes</h3>
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                            <h3>My Notes</h3>
+                            {noteSaving && <span className="text-muted" style={{ fontSize: '0.9rem' }}><Loader2 className="spinner" size={14} /> Saving...</span>}
+                        </div>
                         <textarea
                             className="notes-textarea glass-card border-0"
                             placeholder="Type your notes here for this lesson... (Auto-saved)"
                             rows="10"
+                            value={userNote}
+                            onChange={(e) => handleSaveNote(e.target.value)}
                         ></textarea>
                     </div>
                 );
@@ -395,7 +606,6 @@ const CoursePlayer = () => {
                                 </button>
                             </div>
                         </div>
-
                         <div className="player-tabs">
                             <button
                                 className={`p-tab ${activeTab === 'overview' ? 'active' : ''}`}
@@ -420,6 +630,18 @@ const CoursePlayer = () => {
                                 onClick={() => setActiveTab('notes')}
                             >
                                 Notes
+                            </button>
+                            <button
+                                className={`p-tab ${activeTab === 'info' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('info')}
+                            >
+                                Course Info
+                            </button>
+                            <button
+                                className={`p-tab ${activeTab === 'instructor' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('instructor')}
+                            >
+                                Instructor
                             </button>
                         </div>
 
