@@ -18,6 +18,7 @@ import BlogManagementView from './pages/admin/views/BlogManagementView';
 import BlogPostCreateView from './pages/admin/views/BlogPostCreateView';
 import AnalyticsView from './pages/admin/views/AnalyticsView';
 import SettingsView from './pages/admin/views/SettingsView';
+import ProfileUpdateView from './pages/admin/views/ProfileUpdateView';
 
 import CourseDetail from './pages/course/CourseDetail';
 import CourseList from './pages/course/CourseList';
@@ -106,6 +107,7 @@ function AppContent() {
             <Route path="blog/edit/:id" element={<BlogPostCreateView />} />
             <Route path="analytics" element={<AnalyticsView />} />
             <Route path="settings" element={<SettingsView />} />
+            <Route path="profile" element={<ProfileUpdateView />} />
           </Route>
 
           {/* Legal & Informational Routes */}

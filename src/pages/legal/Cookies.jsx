@@ -6,7 +6,7 @@ const Cookies = () => {
         <>
             <section>
                 <h2>Our Use of Cookies</h2>
-                <p>This Cookie Policy explains how N5SKILLS uses cookies and similar technologies to recognize you when you visit our website. It explains what these technologies are and why we use them, as well as your rights to control our use of them.</p>
+
             </section>
 
             <section>

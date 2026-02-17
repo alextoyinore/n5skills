@@ -6,7 +6,7 @@ const Subscriptions = () => {
         <>
             <section>
                 <h2>Choose Your Path to Success</h2>
-                <p>N5SKILLS offers flexible membership options designed to fit your learning goals and budget. Whether you're looking to master a new skill or provide training for your entire team, we have a plan for you.</p>
+
             </section>
 
             <section>

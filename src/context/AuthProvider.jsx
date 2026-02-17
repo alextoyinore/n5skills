@@ -166,6 +166,14 @@ export const AuthProvider = ({ children }) => {
         await supabase.auth.signOut();
     };
 
+    const refreshUser = async () => {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (currentSession?.user) {
+            const formattedUser = await formatUser(currentSession.user);
+            setUser(formattedUser);
+        }
+    };
+
     const value = {
         user,
         session,
@@ -176,7 +184,8 @@ export const AuthProvider = ({ children }) => {
         login,
         signup,
         signInWithOAuth,
-        logout
+        logout,
+        refreshUser
     };
 
     return (

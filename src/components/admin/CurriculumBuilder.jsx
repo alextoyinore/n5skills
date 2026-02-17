@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, ChevronDown, ChevronUp, Video, FileText, GripVertical, Edit3 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -7,9 +7,46 @@ import './CurriculumBuilder.css';
 const CurriculumBuilder = ({ modules, setModules }) => {
     const [activeModule, setActiveModule] = useState(null);
 
+    // Deduplicate IDs on mount/update to fix existing corrupt data
+    useEffect(() => {
+        const seenModuleIds = new Set();
+        const seenLessonIds = new Set();
+        let hasChanges = false;
+
+        const newModules = modules.map(m => {
+            let mId = m.id;
+            if (seenModuleIds.has(mId)) {
+                mId = Date.now() + Math.random();
+                hasChanges = true;
+            }
+            seenModuleIds.add(mId);
+
+            const newLessons = m.lessons.map(l => {
+                let lId = l.id;
+                if (seenLessonIds.has(lId)) {
+                    lId = Date.now() + Math.random();
+                    hasChanges = true;
+                }
+                seenLessonIds.add(lId);
+                return l.id !== lId ? { ...l, id: lId } : l;
+            });
+
+            if (m.id !== mId || newLessons !== m.lessons) {
+                return { ...m, id: mId, lessons: newLessons };
+            }
+            return m;
+        });
+
+        // Only update if we actually found and fixed duplicates to avoid infinite loops
+        if (hasChanges) {
+            console.log('Fixed duplicate IDs in curriculum');
+            setModules(newModules);
+        }
+    }, [modules, setModules]);
+
     const addModule = () => {
         const newModule = {
-            id: Date.now(),
+            id: Date.now() + Math.random(),
             title: `New Module ${modules.length + 1}`,
             lessons: []
         };
@@ -30,7 +67,7 @@ const CurriculumBuilder = ({ modules, setModules }) => {
                 return {
                     ...m,
                     lessons: [...m.lessons, {
-                        id: Date.now(),
+                        id: Date.now() + Math.random(), // Ensure unique ID
                         title: 'New Lesson',
                         type: type, // 'video', 'reading'
                         duration: '0:00',

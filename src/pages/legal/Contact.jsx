@@ -16,8 +16,8 @@ const Contact = () => {
 
             <section>
                 <h2>Sales Inquiries</h2>
-                <p>Interested in N5SKILLS for your business or government organization? Contact our sales team to schedule a demo and discuss custom pricing options.</p>
-                <p>Email: sales@n5skills.com</p>
+                <p>Interested in Uwise for your business or government organization? Contact our sales team to schedule a demo and discuss custom pricing options.</p>
+                <p>Email: sales@uwise.com</p>
             </section>
 
             <section>

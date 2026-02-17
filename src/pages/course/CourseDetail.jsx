@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Star, Clock, Users, Globe, CheckCircle, PlayCircle, Loader2 } from 'lucide-react';
+import { Star, Clock, Users, Globe, CheckCircle, PlayCircle, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../../utils/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import './CourseDetail.css';
@@ -14,28 +14,52 @@ const CourseDetail = () => {
     const [isEnrolled, setIsEnrolled] = useState(false);
     const [isEnrolling, setIsEnrolling] = useState(false);
     const [curriculum, setCurriculum] = useState([]);
+    const [showFullDesc, setShowFullDesc] = useState(false);
+    const [expandedModules, setExpandedModules] = useState({});
 
     useEffect(() => {
         const fetchData = async () => {
-            setLoading(true);
+            console.log('Fetching course detail for ID:', id);
+
+            if (!course || course.id !== id) {
+                setLoading(true);
+            }
+
             try {
-                // 1. Fetch Course Data
-                const { data, error } = await supabase
+                const { data, error: courseError } = await supabase
                     .from('courses')
                     .select(`
                         *,
-                        categories (name),
-                        profiles:instructor_id (full_name)
+                        categories (name)
                     `)
                     .eq('id', id)
                     .single();
 
-                if (error) throw error;
+                if (courseError) {
+                    console.error('Course detail fetch error:', courseError);
+                    if (courseError.code === 'PGRST116') {
+                        setCourse(null);
+                    }
+                    setLoading(false);
+                    return;
+                }
 
                 if (data) {
                     setCourse(data);
 
-                    // Fetch real curriculum
+                    if (data.instructor_id) {
+                        supabase
+                            .from('profiles')
+                            .select('*')
+                            .eq('id', data.instructor_id)
+                            .single()
+                            .then(({ data: profile }) => {
+                                if (profile) {
+                                    setCourse(prev => (prev && prev.id === data.id) ? { ...prev, instructor: profile } : prev);
+                                }
+                            });
+                    }
+
                     const { data: modules } = await supabase
                         .from('course_modules')
                         .select('*, course_lessons(*)')
@@ -43,14 +67,28 @@ const CourseDetail = () => {
                         .order('order_index');
 
                     if (modules) {
-                        setCurriculum(modules.map(m => ({
-                            title: m.title,
-                            lessons: m.course_lessons.sort((a, b) => a.order_index - b.order_index)
-                        })));
+                        setCurriculum(modules.map(m => {
+                            const totalDuration = m.course_lessons.reduce((acc, lesson) => {
+                                const mins = parseInt(lesson.duration) || 0;
+                                return acc + mins;
+                            }, 0);
+
+                            return {
+                                id: m.id,
+                                title: m.title,
+                                description: m.description,
+                                lessonCount: m.course_lessons.length,
+                                totalTime: totalDuration > 0 ? `${totalDuration}m` : '0m',
+                                lessons: m.course_lessons.sort((a, b) => a.order_index - b.order_index)
+                            };
+                        }));
+
+                        if (modules.length > 0) {
+                            setExpandedModules({ [modules[0].id]: true });
+                        }
                     }
                 }
 
-                // 2. Check Enrollment if user is logged in
                 if (user) {
                     const { data: enrollment } = await supabase
                         .from('enrollments')
@@ -60,16 +98,19 @@ const CourseDetail = () => {
                         .maybeSingle();
 
                     if (enrollment) setIsEnrolled(true);
+                    else setIsEnrolled(false);
+                } else {
+                    setIsEnrolled(false);
                 }
             } catch (error) {
-                console.error('Error fetching course details:', error);
+                console.error('Error in fetchData:', error);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchData();
-    }, [id, user]);
+    }, [id, user?.id]);
 
     const handleEnroll = async () => {
         if (!user) {
@@ -99,170 +140,281 @@ const CourseDetail = () => {
         }
     };
 
-    if (loading) {
+    const toggleModule = (moduleId) => {
+        setExpandedModules(prev => ({
+            ...prev,
+            [moduleId]: !prev[moduleId]
+        }));
+    };
+
+    if (loading && (!course || course.id !== id)) {
         return (
-            <div className="course-detail-page flex-center py-40">
+            <div className="course-detail-page flex-center py-40" style={{ display: 'flex', justifyContent: 'center', padding: '10rem 0' }}>
                 <Loader2 className="spinner" size={48} color="var(--primary)" />
-                <p className="ml-4 text-xl font-medium text-slate-500">Loading course details...</p>
+                <p style={{ marginLeft: '1rem', fontSize: '1.25rem', color: '#64748B' }}>Loading course details...</p>
             </div>
         );
     }
 
     if (!course) {
         return (
-            <div className="course-detail-page py-40 text-center">
+            <div className="course-detail-page" style={{ padding: '10rem 0', textAlign: 'center' }}>
                 <div className="container-mid">
-                    <h2 className="text-2xl font-bold mb-4">Course not found</h2>
+                    <h2 className="detail-title" style={{ fontSize: '2rem', marginBottom: '1rem' }}>Course not found</h2>
                     <Link to="/courses" className="btn btn-primary">Browse All Courses</Link>
                 </div>
             </div>
         );
     }
 
-    const instructorName = course.profiles?.full_name || 'Expert Instructor';
-    const categoryName = course.categories?.name || 'Uncategorized';
-    const courseImage = course.image_url || 'https://via.placeholder.com/800x450';
-    const courseDescription = course.description || `Master the art of ${categoryName.toLowerCase()} with our most comprehensive guide.`;
+    const instructorName = course.instructor?.full_name || 'Expert Instructor';
 
     return (
-        <div className="course-detail-page">
-            <header className="detail-hero">
-                <div className="container-narrow">
-                    <nav className="breadcrumb">
-                        <Link to="/">Home</Link> / <span>{categoryName}</span>
-                    </nav>
-                    <h1 className="detail-title">{course.title}</h1>
-                    <p className="detail-subtitle">{courseDescription}</p>
+        <div className="course-detail-page" style={{ padding: '0', marginTop: '4rem' }}>
+            {/* Hero Section */}
+            <section className="detail-hero">
+                <div className="container-mid">
+                    <div className="description-container">
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                            <span className="category-tag" style={{ background: '#F1F5F9', padding: '4px 12px', borderRadius: '100px', fontSize: '0.85rem', fontWeight: '700', color: 'var(--primary)', textTransform: 'uppercase' }}>
+                                {course.categories?.name || 'Education'}
+                            </span>
+                        </div>
+
+                        <h1 className="detail-title">
+                            {course.title}
+                        </h1>
+
+                        <p className="detail-subtitle">
+
+                        </p>
+
+                        <div className="hero-instructor-line" style={{ marginTop: '1.5rem' }}>
+                            <div className="instructor-avatar" style={{ width: '28px', height: '28px', fontSize: '0.8rem' }}>
+                                {course.instructor?.avatar_url ? (
+                                    <img src={course.instructor.avatar_url} alt={instructorName} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                                ) : (
+                                    instructorName.charAt(0)
+                                )}
+                            </div>
+                            <span>Course by <span className="instructor-name-link">{instructorName}</span></span>
+                        </div>
+                    </div>
 
                     <div className="detail-hero-meta">
                         <div className="meta-group">
                             <div className="rating">
-                                <Star size={18} fill="#FFB800" color="#FFB800" />
+                                <Star className="text-amber-500 fill-amber-500" size={20} color="#F59E0B" fill="#F59E0B" />
                                 <span>4.8</span>
-                                <span className="reviews-count">(1,248 reviews)</span>
+                                <span className="reviews-count">(2,450 ratings)</span>
                             </div>
                             <div className="students">
-                                <Users size={18} />
-                                <span>156,000 enrolled</span>
+                                <Users size={20} />
+                                <span>12,340 students</span>
                             </div>
                         </div>
-                        <div className="instructor-badge">
-                            <div className="instructor-avatar">
-                                {instructorName.charAt(0)}
+                        <div className="meta-group">
+                            <div className="students">
+                                <Globe size={20} />
+                                <span>English</span>
                             </div>
-                            <span>By {instructorName}</span>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <section className="detail-preview-section">
-                <div className="container-mid">
-                    <div className="preview-frame glass-card border-0">
-                        <img src={courseImage} alt={course.title} />
-                        <div className="play-btn-large">
-                            <PlayCircle size={80} />
-                            <span>Preview this course</span>
+                            <div className="students">
+                                <Clock size={20} />
+                                <span>Last updated June 2025</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
+            {/* Main Content Grid */}
             <div className="container-mid detail-grid">
-                <main className="detail-main-content">
-                    <section className="detail-section">
-                        <h2 className="section-title">What you'll master</h2>
+                {/* Preview Image - Full Width */}
+                <div className="detail-preview-section">
+                    <div className="preview-frame">
+                        <img
+                            src={course.image_url || 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&q=80&w=2072'}
+                            alt={course.title}
+                        />
+                        <div className="play-btn-large">
+                            <div style={{
+                                width: '80px',
+                                height: '80px',
+                                background: 'rgba(255,255,255,0.9)',
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'var(--primary)',
+                                boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+                            }}>
+                                <PlayCircle size={40} fill="currentColor" />
+                            </div>
+                            <span>Watch Intro</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Left Column */}
+                <div className="detail-main-col">
+
+
+                    {/* Learning Objectives */}
+                    <div className="detail-section">
+                        <h2 className="detail-section-title" style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '2rem', color: 'var(--dark)' }}>What you'll master</h2>
                         <div className="highlights-editorial-grid">
-                            {course.highlights && course.highlights.length > 0 ? (
-                                course.highlights.map((highlight, index) => (
-                                    <div key={index} className="highlight-box">
-                                        <CheckCircle size={22} color="var(--primary)" />
-                                        <p>{highlight}</p>
+                            {(course.highlights || course.learning_objectives || [
+                                'Professional industry workflow',
+                                'Core concepts and architecture',
+                                'Real-world project implementation',
+                                'Advanced optimization techniques',
+                                'Best practices and security',
+                                'Deployment and scaling'
+                            ]).map((obj, i) => (
+                                <div key={i} className="highlight-box">
+                                    <div className="highlight-icon-wrapper">
+                                        <CheckCircle size={20} />
                                     </div>
-                                ))
-                            ) : (
-                                <>
-                                    <div className="highlight-box">
-                                        <CheckCircle size={22} color="var(--primary)" />
-                                        <p>Professional workflow tools and industry-standard practices used by top {categoryName} experts.</p>
-                                    </div>
-                                    <div className="highlight-box">
-                                        <CheckCircle size={22} color="var(--primary)" />
-                                        <p>Deep dive into advanced concepts, moving beyond the basics to true mastery in {categoryName}.</p>
-                                    </div>
-                                    <div className="highlight-box">
-                                        <CheckCircle size={22} color="var(--primary)" />
-                                        <p>Lifetime access to all future updates and a dedicated community of learners.</p>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </section>
-
-                    <section className="detail-section">
-                        <h2 className="section-title">Curriculum</h2>
-                        <div className="curriculum-editorial-list">
-                            {curriculum.length > 0 ? (
-                                curriculum.map((module, mIdx) => (
-                                    <div key={mIdx} className="curriculum-module-group">
-                                        <h3 className="module-title-detail">{module.title}</h3>
-                                        {module.lessons.map((lesson, lIdx) => (
-                                            <div key={lesson.id} className="curriculum-item">
-                                                <div className="curr-number">{lIdx + 1}</div>
-                                                <div className="curr-body">
-                                                    <h4>{lesson.title}</h4>
-                                                    <p>{lesson.content_type === 'video' ? 'Video Lesson' : 'Reading Material'}</p>
-                                                </div>
-                                                <div className="curr-duration">{lesson.duration || '10m'}</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="no-curriculum py-10 text-center glass-card">
-                                    <p className="text-slate-500">Curriculum is being updated. Stay tuned!</p>
+                                    <p>{obj}</p>
                                 </div>
-                            )}
+                            ))}
                         </div>
-                    </section>
+                    </div>
 
-                    <section className="detail-section instructor-reveal border-0">
-                        <h2 className="section-title">Your Instructor</h2>
-                        <div className="instructor-editorial">
-                            <div className="instructor-info-block">
-                                <h3>{instructorName}</h3>
-                                <p className="instructor-tagline">Lead Educator & Industry Veteran</p>
-                                <p className="instructor-description">
-                                    With years of professional experience in {categoryName.toLowerCase()}, {instructorName} has helped thousands of students achieve their career goals. Their teaching approach bridge the gap between complex theory and real-world application.
-                                </p>
+                    {/* Curriculum */}
+                    <div className="detail-section">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2rem' }}>
+                            <h2 className="detail-section-title" style={{ fontSize: '1.75rem', fontWeight: '800', color: 'var(--dark)' }}>Course Curriculum</h2>
+                            <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>
+                                {curriculum.length} modules • {curriculum.reduce((acc, m) => acc + m.lessonCount, 0)} lessons
+                            </span>
+                        </div>
+
+                        <div className="curriculum-accordion">
+                            {curriculum.map((module, idx) => (
+                                <div key={module.id} className="module-accordion-item">
+                                    <button
+                                        className={`module-header ${expandedModules[module.id] ? 'active' : ''}`}
+                                        onClick={() => toggleModule(module.id)}
+                                    >
+                                        <div className="module-title-info">
+                                            <div className="module-meta-top">
+                                                <span className="module-index">Module 0{idx + 1}</span>
+                                                <span className="module-stats">{module.lessonCount} lessons • {module.totalTime}</span>
+                                            </div>
+                                            <h4 className="module-title-detail">{module.title}</h4>
+                                        </div>
+                                        {expandedModules[module.id] ? <ChevronUp className="accordion-icon" /> : <ChevronDown className="accordion-icon" />}
+                                    </button>
+
+                                    <div className={`module-content ${expandedModules[module.id] ? 'expanded' : 'collapsed'}`}>
+                                        {module.description && <p className="module-description-text">{module.description}</p>}
+                                        <div className="lessons-list">
+                                            {module.lessons.map((lesson, lIdx) => (
+                                                <div key={lesson.id} className="curriculum-item">
+                                                    <span className="curr-number">{lIdx + 1 < 10 ? `0${lIdx + 1}` : lIdx + 1}</span>
+                                                    <div className="curr-body">
+                                                        <h4>{lesson.title}</h4>
+                                                        {lesson.is_preview && <span style={{ fontSize: '0.75rem', background: '#DCFCE7', color: '#166534', padding: '2px 6px', borderRadius: '4px', fontWeight: '700' }}>PREVIEW</span>}
+                                                    </div>
+                                                    <div className="curr-duration">
+                                                        {lesson.duration}m
+                                                    </div>
+                                                    <PlayCircle size={18} style={{ opacity: 0.3 }} />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Instructor Profile */}
+                    {course.instructor && (
+                        <div className="detail-section">
+                            <h2 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '2rem', color: 'var(--dark)' }}>Your Instructor</h2>
+                            <div className="instructor-editorial-premium">
+                                <div className="instructor-card-inner">
+                                    <div className="instructor-sidebar-info">
+                                        <div className="instructor-avatar-giant">
+                                            {course.instructor.avatar_url ? (
+                                                <img src={course.instructor.avatar_url} alt={instructorName} />
+                                            ) : (
+                                                instructorName.charAt(0)
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="instructor-main-bio">
+                                        <div className="instructor-bio-header">
+                                            <h3>{instructorName}</h3>
+                                            <div className="instructor-headline">{course.instructor.headline || 'Industry Expert & Global Instructor'}</div>
+                                            <div className="instructor-quick-stats">
+                                                <div className="q-stat">
+                                                    <Star size={18} />
+                                                    <span>4.9 Instructor Rating</span>
+                                                </div>
+                                                <div className="q-stat">
+                                                    <Users size={18} />
+                                                    <span>45k+ Students</span>
+                                                </div>
+                                                <div className="q-stat">
+                                                    <PlayCircle size={18} />
+                                                    <span>12 Courses</span>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                        <p className="instructor-bio-text">
+                                            {course.instructor.bio || "An expert with years of real-world experience, dedicated to sharing practical knowledge and industry-standard workflows with students worldwide."}
+                                        </p>
+
+
+                                        <div className="instructor-social-links">
+                                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'left' }}>
+                                                {/* Social icons if available */}
+                                                <Globe size={20} style={{ color: '#94A3B8', cursor: 'pointer' }} />
+                                                <Users size={20} style={{ color: '#94A3B8', cursor: 'pointer' }} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </section>
-                </main>
+                    )}
+                </div>
 
+                {/* Right Column / Sidebar */}
                 <aside className="detail-sidebar-editorial">
-                    <div className="sticky-cta glass-card border-0">
+                    <div className="sticky-cta">
                         <div className="cta-pricing">
-                            <span className="current-price">₦{course.price?.toLocaleString()}</span>
-                            {!course.is_free && <span className="original-price">₦319,984</span>}
-                            {!course.is_free && <span className="discount-badge">85% OFF</span>}
+                            <span className="current-price">Free</span>
+                            {/* <span className="original-price">$99.00</span>
+                            <span className="discount-badge">100% OFF</span> */}
                         </div>
+
                         <div className="cta-actions">
                             <button
-                                className="btn btn-primary btn-lg btn-block"
+                                className="btn btn-primary"
                                 onClick={handleEnroll}
                                 disabled={isEnrolling}
+                                style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '1.1rem' }}
                             >
-                                {isEnrolling ? <Loader2 className="spinner" size={20} /> : (isEnrolled ? 'Go to Course' : 'Enroll Now')}
+                                {isEnrolling ? <Loader2 className="spinner" size={20} /> : null}
+                                {isEnrolled ? 'Go to Course' : 'Enroll Now'}
                             </button>
-                            <button className="btn btn-outline btn-lg btn-block">
-                                Add to Wishlist
-                            </button>
+                            {!isEnrolled && (
+                                <p style={{ textAlign: 'center', fontSize: '0.85rem', color: '#64748B' }}>
+                                    30-Day Money-Back Guarantee
+                                </p>
+                            )}
                         </div>
+
                         <ul className="cta-features">
-                            <li><Clock size={16} /> Lifetime Access</li>
-                            <li><Globe size={16} /> English & Subtitles</li>
-                            <li><CheckCircle size={16} /> Certificate of Completion</li>
+                            <li><Clock size={18} /> Full lifetime access</li>
+                            <li><PlayCircle size={18} /> Access on mobile and TV</li>
+                            <li><CheckCircle size={18} /> Certificate of completion</li>
                         </ul>
                     </div>
                 </aside>

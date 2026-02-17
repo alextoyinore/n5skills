@@ -6,7 +6,7 @@ const Business = () => {
         <>
             <section>
                 <h2>Empower Your Workforce</h2>
-                <p>In today's rapidly evolving digital landscape, staying ahead means constantly upgrading your team's capabilities. N5SKILLS for Business provides a comprehensive solution for talent development.</p>
+                <p>In today's rapidly evolving digital landscape, staying ahead means constantly upgrading your team's capabilities. Uwise for Business provides a comprehensive solution for talent development.</p>
             </section>
 
             <section>
@@ -29,7 +29,7 @@ const Business = () => {
 
     return (
         <FormalPage
-            title="N5SKILLS for Business"
+            title="Uwise for Business"
             subtitle="The strategic partner for skills-based organizational growth."
             content={content}
         />

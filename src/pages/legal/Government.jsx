@@ -6,7 +6,7 @@ const Government = () => {
         <>
             <section>
                 <h2>Modernizing Public Service</h2>
-                <p>N5SKILLS partners with government agencies to bridge the digital skills gap and prepare the public workforce for the challenges of the 21st century.</p>
+                <p>Uwise partners with government agencies to bridge the digital skills gap and prepare the public workforce for the challenges of the 21st century.</p>
             </section>
 
             <section>
@@ -29,7 +29,7 @@ const Government = () => {
 
     return (
         <FormalPage
-            title="N5SKILLS for Government"
+            title="Uwise for Government"
             subtitle="Building a future-ready public sector workforce."
             content={content}
         />

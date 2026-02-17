@@ -13,8 +13,8 @@ export const useSettings = () => {
 
 export const SettingsProvider = ({ children }) => {
     const [settings, setSettings] = useState({
-        platform_name: 'N5 Skills',
-        support_email: 'support@n5skills.com'
+        platform_name: 'Uwise',
+        support_email: 'support@uwise.com'
     });
     const [loading, setLoading] = useState(true);
 

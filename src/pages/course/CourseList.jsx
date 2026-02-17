@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import CourseCard from '../../components/course/CourseCard';
 import { Sliders, X, Loader2 } from 'lucide-react';
@@ -41,17 +40,22 @@ const CourseList = () => {
             setCategories(["All", ...catData.map(c => c.name)]);
 
             // 2. Fetch All Published Courses
+            console.log('Fetching all published courses...');
             const { data: courseData, error: courseError } = await supabase
                 .from('courses')
                 .select(`
                     *,
-                    categories (name),
-                    profiles:instructor_id (full_name)
+                    categories (name)
                 `)
                 .eq('status', 'published')
                 .order('created_at', { ascending: false });
 
-            if (courseError) throw courseError;
+            if (courseError) {
+                console.error('Course fetch error:', courseError);
+                throw courseError;
+            }
+
+            console.log('Fetched courses for list:', courseData);
             setCourses(courseData || []);
 
         } catch (error) {

@@ -13,7 +13,8 @@ import {
     X,
     ExternalLink,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    User
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -156,13 +157,21 @@ const AdminDashboard = () => {
                         <LogOut size={20} />
                         <span>Logout</span>
                     </button>
-                    <div className="admin-profile">
+                    <div
+                        className={`admin-profile ${activeTab === 'profile' ? 'active' : ''}`}
+                        onClick={() => navigate('/admin/profile')}
+                        style={{ cursor: 'pointer' }}
+                    >
                         <div className="avatar-sm">
-                            {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
+                            {user?.avatar ? (
+                                <img src={user.avatar} alt={user.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                            ) : (
+                                user?.name ? user.name.charAt(0).toUpperCase() : 'A'
+                            )}
                         </div>
                         <div className="admin-info">
                             <h4>{user?.name || 'Admin'}</h4>
-                            <p>Administrator</p>
+                            <p>{user?.role === 'admin' ? 'Administrator' : 'Instructor'}</p>
                         </div>
                     </div>
                 </div>

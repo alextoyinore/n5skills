@@ -324,41 +324,45 @@ const CoursePlayer = () => {
                 </aside>
 
                 <div className="player-content">
-                    <div className="video-viewport">
-                        <div className="video-mock glass-card border-0">
-                            {currentLessonData?.video_url ? (
-                                <iframe
-                                    src={currentLessonData.video_url.replace('watch?v=', 'embed/')}
-                                    className="video-iframe"
-                                    title={currentLessonData.title}
-                                    allowFullScreen
-                                />
-                            ) : (
-                                <>
-                                    <img src={course.image_url || 'https://via.placeholder.com/800x450'} alt="Video Preview" />
-                                    <div className="play-overlay">
-                                        <Play size={64} fill="currentColor" />
+                    {currentLessonData?.content_type !== 'reading' && (
+                        <div className="video-viewport">
+                            <div className="video-mock glass-card border-0">
+                                {currentLessonData?.video_url ? (
+                                    <iframe
+                                        src={currentLessonData.video_url.replace('watch?v=', 'embed/')}
+                                        className="video-iframe"
+                                        title={currentLessonData.title}
+                                        allowFullScreen
+                                    />
+                                ) : (
+                                    <>
+                                        <img src={course.image_url || 'https://via.placeholder.com/800x450'} alt="Video Preview" />
+                                        <div className="play-overlay">
+                                            <Play size={64} fill="currentColor" />
+                                        </div>
+                                    </>
+                                )}
+                                {(!currentLessonData?.video_url || !(currentLessonData.video_url.includes('youtube') || currentLessonData.video_url.includes('youtu.be'))) && (
+                                    <div className="player-controls">
+                                        <div className="ctrl-progress">
+                                            <div className="ctrl-progress-fill" style={{ width: '0%' }}></div>
+                                        </div>
+                                        <div className="ctrl-buttons">
+                                            <div className="ctrl-left">
+                                                <Play size={20} />
+                                                <SkipForward size={20} onClick={nextLesson} />
+                                                <span className="time-display">00:00 / {currentLessonData?.duration || '10:00'}</span>
+                                            </div>
+                                            <div className="ctrl-right">
+                                                <Settings size={20} />
+                                                <Maximize size={20} />
+                                            </div>
+                                        </div>
                                     </div>
-                                </>
-                            )}
-                            <div className="player-controls">
-                                <div className="ctrl-progress">
-                                    <div className="ctrl-progress-fill" style={{ width: '0%' }}></div>
-                                </div>
-                                <div className="ctrl-buttons">
-                                    <div className="ctrl-left">
-                                        <Play size={20} />
-                                        <SkipForward size={20} onClick={nextLesson} />
-                                        <span className="time-display">00:00 / {currentLessonData?.duration || '10:00'}</span>
-                                    </div>
-                                    <div className="ctrl-right">
-                                        <Settings size={20} />
-                                        <Maximize size={20} />
-                                    </div>
-                                </div>
+                                )}
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     <div className="lesson-details">
                         <div className="lesson-actions">

@@ -6,14 +6,14 @@ const About = () => {
         <>
             <h2>Our Mission</h2>
             <p>
-                At N5SKILLS, we believe that education is a fundamental human right. Our mission is to provide
+                At Uwise, we believe that education is a fundamental human right. Our mission is to provide
                 unlimited access to world-class learning, empowering individuals to transform their lives
                 and communities through knowledge.
             </p>
 
             <h2>Who We Are</h2>
             <p>
-                Founded in 2026, N5SKILLS has grown from a small startup to a global leader in online education.
+                Founded in 2026, Uwise has grown from a small startup to a global leader in online education.
                 We partner with over 100 top universities and industry leaders to bring the best learning
                 experiences to students everywhere.
             </p>
@@ -29,7 +29,7 @@ const About = () => {
 
     return (
         <FormalPage
-            title="About N5SKILLS"
+            title="About Uwise"
             subtitle="Empowering learners worldwide since 2026"
             content={content}
         />

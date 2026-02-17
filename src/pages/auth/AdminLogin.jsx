@@ -69,7 +69,7 @@ const AdminLogin = () => {
                             <ShieldCheck size={40} />
                             <span>OFFICIAL ACCESS</span>
                         </div>
-                        <h2>N5 Management <br />Console</h2>
+
                         <p>Secure portal for administrators to manage course content, users, and platform analytics.</p>
 
                         <div className="admin-security-info">
@@ -119,7 +119,7 @@ const AdminLogin = () => {
                             <label><Mail size={16} /> Admin Email</label>
                             <input
                                 type="email"
-                                placeholder="admin@n5skills.com"
+
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required

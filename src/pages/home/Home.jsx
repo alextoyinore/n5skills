@@ -44,10 +44,12 @@ const Home = () => {
 
     const fetchCoursesByCategory = async (category) => {
         setFetchLoading(true);
+        console.log('Fetching courses for category:', category);
         try {
+            // Simplified query: removed profiles join which might be failing due to FK target mismatch
             const selectQuery = category === "All"
-                ? "*, categories(name), profiles:instructor_id(full_name)"
-                : "*, categories!inner(name), profiles:instructor_id(full_name)";
+                ? "*, categories(name)"
+                : "*, categories!inner(name)";
 
             let query = supabase
                 .from('courses')
@@ -62,7 +64,12 @@ const Home = () => {
 
             const { data: courseData, error: courseError } = await query;
 
-            if (courseError) throw courseError;
+            if (courseError) {
+                console.error('Supabase Query Error:', courseError);
+                throw courseError;
+            }
+
+            console.log('Fetched courses:', courseData);
             setCourses(courseData || []);
         } catch (error) {
             console.error('Error fetching courses:', error);
@@ -118,7 +125,7 @@ const Home = () => {
 
                         {courses.length === 0 && (
                             <div className="no-courses py-20 text-center glass-card w-full">
-                                <p className="text-slate-500">No courses found in this category yet.</p>
+                                <p className="text-slate-500 text-center">No courses found in this category yet.</p>
                             </div>
                         )}
                     </>
