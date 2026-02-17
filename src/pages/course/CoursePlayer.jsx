@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Play, CheckCircle, ChevronLeft, ChevronRight, MessageSquare, FileText, Settings, Maximize, Clock, SkipForward, Loader2 } from 'lucide-react';
+import { Play, CheckCircle, ChevronLeft, ChevronRight, MessageSquare, FileText, Settings, Maximize, Clock, SkipForward, Loader2, Menu, X, LayoutDashboard } from 'lucide-react';
 import { supabase } from '../../utils/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import './CoursePlayer.css';
@@ -13,6 +13,7 @@ const CoursePlayer = () => {
     const [completedLessons, setCompletedLessons] = useState([]);
     const [curriculum, setCurriculum] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -268,9 +269,15 @@ const CoursePlayer = () => {
         <div className="player-page">
             <header className="player-header">
                 <div className="player-nav-container">
-                    <Link to="/dashboard" className="player-back">
-                        <ChevronLeft size={20} /> Dashboard
-                    </Link>
+                    <div className="d-flex align-items-center gap-2">
+                        <button className="mobile-menu-btn" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+                            <Menu size={24} />
+                        </button>
+                        <Link to="/dashboard" className="player-back">
+                            <ChevronLeft size={24} />
+                            <span className="dashboard-text">Dashboard</span>
+                        </Link>
+                    </div>
                     <div className="player-header-title">
                         <h2>{course.title}</h2>
                         <span className="lesson-info-badge">{currentLessonData?.title}</span>
@@ -287,7 +294,16 @@ const CoursePlayer = () => {
             </header>
 
             <div className="player-layout">
-                <aside className="curriculum-sidebar">
+                {/* Mobile Sidebar Overlay */}
+                {isSidebarOpen && <div className="sidebar-overlay" onClick={() => setIsSidebarOpen(false)}></div>}
+
+                <aside className={`curriculum-sidebar ${isSidebarOpen ? 'open' : ''}`}>
+                    <div className="sidebar-header-mobile">
+                        <h3>Course Content</h3>
+                        <button className="close-sidebar-btn" onClick={() => setIsSidebarOpen(false)}>
+                            <X size={24} />
+                        </button>
+                    </div>
                     <div className="sidebar-sticky">
                         <div className="curriculum-header">
                             <h3>Course Curriculum</h3>

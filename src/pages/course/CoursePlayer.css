@@ -308,6 +308,10 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
+    flex-wrap: wrap;
+    /* Allow wrapping on small screens */
+    gap: 0.5rem;
+    /* Space when wrapped */
 }
 
 .question-form {
@@ -439,36 +443,179 @@
     gap: 0.3rem;
 }
 
-@media (max-width: 1200px) {
+/* Mobile Sidebar Styles */
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text);
+    padding: 0.5rem;
+    margin-right: 0.5rem;
+}
+
+.sidebar-header-mobile {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #E2E8F0;
+    background: #fff;
+}
+
+.sidebar-header-mobile h3 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.close-sidebar-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+}
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-text {
+        display: none;
+    }
+}
+
+@media (max-width: 1024px) {
+    .mobile-menu-btn {
+        display: block;
+    }
+
+    .sidebar-header-mobile {
+        display: flex;
+    }
+
+    .curriculum-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 85%;
+        max-width: 350px;
+        background: #fff;
+        z-index: 1001;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-in-out;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        border-right: 1px solid #E2E8F0;
+    }
+
+    .curriculum-sidebar.open {
+        transform: translateX(0);
+    }
+
+    /* Hide the desktop header inside sidebar on mobile since we have a custom mobile header */
+    .curriculum-sidebar .curriculum-header {
+        display: none;
+    }
+
     .player-layout {
         flex-direction: column;
     }
 
-    .curriculum-sidebar {
-        width: 100%;
-        border-right: none;
-        border-top: 1px solid #E2E8F0;
+    .player-content {
+        order: 1;
+        padding: 1.5rem;
+        max-width: 100%;
     }
+
+    /* Sidebar styles are now handled above with fixed position */
 
     .sidebar-sticky {
-        height: auto;
-    }
-
-    .player-content {
-        padding: 1.5rem;
+        position: relative;
+        top: 0;
+        height: calc(100% - 65px);
+        /* Adjust for mobile header height */
+        overflow-y: auto;
     }
 }
 
-@media (max-width: 992px) {
-    .player-main {
-        flex-direction: column;
-    }
-
-    .player-nav {
+@media (max-width: 768px) {
+    .player-nav-container {
         padding: 0 1rem;
     }
 
-    .player-title {
+    .player-header-title h2 {
+        font-size: 1rem;
+        max-width: 200px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .lesson-info-badge {
         display: none;
+        /* Hide current lesson title in header on mobile to save space */
+    }
+
+    .player-progress {
+        display: none;
+        /* Hide progress bar in header on very small screens */
+    }
+
+    .lesson-actions {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .lesson-actions h1 {
+        font-size: 1.5rem;
+    }
+
+    .btn-group {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .btn-group .btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .player-tabs {
+        gap: 1.5rem;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+        white-space: nowrap;
+        /* Hide scrollbar */
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .player-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .resource-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ctrl-left span {
+        display: none;
+        /* Hide time display on small screens if needed, or adjust */
     }
 }
