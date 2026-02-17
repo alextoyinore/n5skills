@@ -42,7 +42,10 @@ const DashboardOverview = () => {
                     courses (price)
                 `);
 
-            const totalRevenue = revenueData?.reduce((sum, en) => sum + (en.courses?.price || 0), 0) || 0;
+            const totalRevenue = revenueData?.reduce((sum, en) => {
+                const price = en.courses?.price || 0;
+                return sum + Number(price);
+            }, 0) || 0;
 
             setStats({
                 totalCourses: courseCount || 0,
@@ -51,16 +54,21 @@ const DashboardOverview = () => {
             });
 
             // 4. Recent Enrollments
-            const { data: recent } = await supabase
+            const { data: recent, error: recentError } = await supabase
                 .from('enrollments')
                 .select(`
                     enrolled_at,
-                    profiles:user_id (full_name, email),
+                    profiles:user_id (full_name, email, avatar_url),
                     courses (title)
                 `)
                 .order('enrolled_at', { ascending: false })
                 .limit(5);
 
+            if (recentError) {
+                console.error('Error fetching recent enrollments:', recentError);
+            }
+
+            console.log("Recent enrollments data:", recent);
             setRecentEnrollments(recent || []);
 
         } catch (error) {
@@ -143,12 +151,25 @@ const DashboardOverview = () => {
                             {recentEnrollments.map((en, i) => (
                                 <tr key={i}>
                                     <td>
-                                        <div className="student-info-cell">
-                                            <p className="student-name">{en.profiles?.full_name || 'Anonymous'}</p>
-                                            <p className="student-email">{en.profiles?.email}</p>
+                                        <div className="student-info-cell" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            <div className="avatar-sm">
+                                                {en.profiles?.avatar_url ? (
+                                                    <img src={en.profiles.avatar_url} alt="" className="avatar-sm" />
+                                                ) : (
+                                                    (en.profiles?.full_name || 'A').charAt(0)
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className="student-name" style={{ margin: 0, fontWeight: 700, color: '#0F172A' }}>
+                                                    {en.profiles?.full_name || 'Anonymous Student'}
+                                                </p>
+                                                <p className="student-email" style={{ margin: 0, fontSize: '0.8rem', color: '#64748B' }}>
+                                                    {en.profiles?.email || 'No email'}
+                                                </p>
+                                            </div>
                                         </div>
                                     </td>
-                                    <td>{en.courses?.title}</td>
+                                    <td>{en.courses?.title || 'Unknown Course'}</td>
                                     <td>{new Date(en.enrolled_at).toLocaleDateString()}</td>
                                     <td><span className="badge-status success">Active</span></td>
                                 </tr>

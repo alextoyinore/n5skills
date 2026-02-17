@@ -37,11 +37,22 @@ const UserManagementView = () => {
 
             if (error) {
                 console.error("Supabase fetch error:", error);
-                throw error;
+                // Don't throw, just log it so we can see what's failing in the UI
             }
 
             console.log("Fetched users:", data);
-            setUsers(data || []);
+
+            // If we have data but no email/created_at due to old schema, 
+            // map them to empty strings to avoid crashes
+            const sanitizedData = (data || []).map(user => ({
+                ...user,
+                email: user.email || '',
+                full_name: user.full_name || 'Unnamed User',
+                role: user.role || 'student',
+                created_at: user.created_at || new Date().toISOString()
+            }));
+
+            setUsers(sanitizedData);
         } catch (error) {
             console.error('Error fetching users:', error);
         } finally {
