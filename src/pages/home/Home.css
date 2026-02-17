@@ -34,12 +34,21 @@
 
 .category-chips {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
     gap: 1rem;
     margin-top: 1rem;
     margin-bottom: 2rem;
-    justify-content: center;
-    /* Space between chips and next section header */
+    padding: 0.5rem 2rem;
+    margin-left: -2rem;
+    margin-right: -2rem;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.category-chips::-webkit-scrollbar {
+    display: none;
 }
 
 .category-chip {
@@ -49,6 +58,8 @@
     background: var(--white);
     font-weight: 600;
     transition: var(--transition);
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .category-chip:hover,
@@ -135,6 +146,15 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 1rem;
+    }
+
+    .category-chips {
+        padding-bottom: 1rem;
+    }
+
+    .category-chip {
+        padding: 0.6rem 1.25rem;
+        font-size: 0.9rem;
     }
 
     .courses-grid {
