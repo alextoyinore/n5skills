@@ -347,7 +347,9 @@ const CourseDetail = () => {
                                     </div>
                                     <div className="instructor-main-bio">
                                         <div className="instructor-bio-header">
-                                            <h3>{instructorName}</h3>
+                                            <h3>{course.instructor_id ? (
+                                                <Link to={`/instructor/${course.instructor_id}`} style={{ color: 'inherit', textDecoration: 'none' }}>{instructorName}</Link>
+                                            ) : instructorName}</h3>
                                             <div className="instructor-headline">{course.instructor.headline || 'Industry Expert & Global Instructor'}</div>
                                             <div className="instructor-quick-stats">
                                                 <div className="q-stat">

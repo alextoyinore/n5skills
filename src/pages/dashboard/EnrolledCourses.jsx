@@ -23,6 +23,7 @@ const EnrolledCourses = () => {
                 .from('enrollments')
                 .select(`
                     course_id,
+                    last_lesson_id,
                     courses (
                         id,
                         title,
@@ -30,7 +31,7 @@ const EnrolledCourses = () => {
                         categories (name),
                         course_modules (
                             id,
-                            course_lessons (id)
+                            course_lessons (id, title)
                         )
                     )
                 `)
@@ -53,12 +54,20 @@ const EnrolledCourses = () => {
                 const completedCount = allLessons.filter(l => completedLessonIds.has(l.id)).length;
                 const progress = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
+                // Find the title of the last accessed lesson
+                let lastLessonTitle = 'Introduction';
+                if (en.last_lesson_id) {
+                    const lastLesson = allLessons.find(l => l.id === en.last_lesson_id);
+                    if (lastLesson) lastLessonTitle = lastLesson.title;
+                }
+
                 return {
                     id: course.id,
                     title: course.title,
                     image: course.image_url || 'https://via.placeholder.com/300x170',
                     category: course.categories?.name || 'Uncategorized',
-                    progress: progress
+                    progress: progress,
+                    lastLesson: lastLessonTitle
                 };
             });
 
@@ -80,67 +89,50 @@ const EnrolledCourses = () => {
 
     return (
         <div className="enrolled-page">
-            <div className="container p-10">
-                <header className="enrolled-header mb-8">
-                    <Link to="/dashboard" className="back-link flex items-center gap-2 text-slate-500 hover:text-primary transition-colors mb-4">
-                        <ArrowLeft size={18} /> Back to Dashboard
+            <div className="enrolled-container container">
+                <header className="enrolled-header">
+                    <Link to="/dashboard" className="back-link">
+                        <ArrowLeft size={18} /> <span>Back to Dashboard</span>
                     </Link>
-                    <div className="flex items-center gap-4">
-                        <div className="icon-badge p-3 bg-primary/10 rounded-xl text-primary">
+                    <div className="enrolled-header-info">
+                        <div className="enrolled-icon-badge">
                             <BookOpen size={28} />
                         </div>
-                        <div>
-                            <h1 className="text-3xl font-extrabold text-slate-900">All My Courses</h1>
-                            <p className="text-slate-500">You are currently enrolled in {courses.length} courses.</p>
+                        <div className="header-text-wrap">
+                            <h1>All My Courses</h1>
+                            <p>You are currently enrolled in <strong>{courses.length}</strong> {courses.length === 1 ? 'course' : 'courses'}.</p>
                         </div>
                     </div>
                 </header>
 
                 {courses.length > 0 ? (
-                    <div className="courses-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '2rem' }}>
+                    <div className="enrolled-courses-grid">
                         {courses.map(course => (
-                            <div key={course.id} className="course-card-enrolled glass-card p-4 hover-lift">
-                                <div className="card-thumb-enrolled relative mb-4" style={{ borderRadius: '12px', overflow: 'hidden', height: '180px' }}>
-                                    <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
-                                    <Link to={`/learn/${course.id}`} className="play-overlay absolute inset-0 flex-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity">
-                                        <PlayCircle size={60} color="white" />
-                                    </Link>
+                            <div key={course.id} className="dashboard-card glass-card border-0">
+                                <div className="card-thumb">
+                                    <img src={course.image} alt={course.title} />
+                                    <Link to={`/learn/${course.id}`} className="play-btn"><PlayCircle size={40} /></Link>
                                 </div>
-                                <div className="card-details-enrolled">
-                                    <span className="category-tag-enrolled text-xs font-bold uppercase tracking-wider text-primary bg-primary/5 px-2 py-1 rounded-md mb-2 inline-block">
-                                        {course.category}
-                                    </span>
-                                    <h3 className="text-lg font-bold text-slate-900 mb-4 line-clamp-1">{course.title}</h3>
-
-                                    <div className="progress-section">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <span className="text-sm font-semibold text-slate-500">Course Progress</span>
-                                            <span className="text-sm font-bold text-primary">{course.progress}%</span>
+                                <div className="card-details">
+                                    <span className="category-tag">{course.category}</span>
+                                    <h3>{course.title}</h3>
+                                    <p className="last-lesson-title">Running: {course.lastLesson}</p>
+                                    <div className="progress-container">
+                                        <div className="progress-bar">
+                                            <div className="progress-fill" style={{ width: `${course.progress}%` }}></div>
                                         </div>
-                                        <div className="progress-bar-bg h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                            <div
-                                                className="progress-bar-fill h-full bg-primary transition-all duration-500"
-                                                style={{ width: `${course.progress}%` }}
-                                            ></div>
-                                        </div>
+                                        <span className="progress-percent">{course.progress}%</span>
                                     </div>
-
-                                    <Link
-                                        to={`/learn/${course.id}`}
-                                        className="btn btn-primary w-full mt-6 flex-center gap-2"
-                                    >
-                                        {course.progress === 100 ? 'Review Course' : (course.progress > 0 ? 'Continue Learning' : 'Start Course')}
-                                    </Link>
                                 </div>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <div className="empty-state text-center py-20 glass-card">
-                        <BookOpen size={48} className="mx-auto text-slate-300 mb-4" />
-                        <h2 className="text-xl font-bold text-slate-900">No courses found</h2>
-                        <p className="text-slate-500 mb-8">You haven't enrolled in any courses yet.</p>
-                        <Link to="/courses" className="btn btn-primary">Browse Courses</Link>
+                    <div className="enrolled-empty-state glass-card border-0">
+                        <BookOpen size={64} />
+                        <h2>No courses found</h2>
+                        <p>You haven't enrolled in any courses yet. Start your learning journey today!</p>
+                        <Link to="/courses" className="btn btn-primary">Explore Courses</Link>
                     </div>
                 )}
             </div>

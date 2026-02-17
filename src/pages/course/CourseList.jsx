@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import CourseCard from '../../components/course/CourseCard';
 import { Sliders, X, Loader2 } from 'lucide-react';
@@ -40,7 +41,6 @@ const CourseList = () => {
             setCategories(["All", ...catData.map(c => c.name)]);
 
             // 2. Fetch All Published Courses
-            console.log('Fetching all published courses...');
             const { data: courseData, error: courseError } = await supabase
                 .from('courses')
                 .select(`
@@ -55,7 +55,6 @@ const CourseList = () => {
                 throw courseError;
             }
 
-            console.log('Fetched courses for list:', courseData);
             setCourses(courseData || []);
 
         } catch (error) {
@@ -81,97 +80,101 @@ const CourseList = () => {
                         className="filter-drawer-toggle"
                         onClick={() => setIsFilterDrawerOpen(true)}
                     >
-                        <Sliders size={20} /> Filters
+                        <Sliders size={20} />
+                        Filters
                     </button>
                 </div>
-                <p>Browse our catalog of world-class courses and start learning today.</p>
             </header>
 
-            <div className={`filter-overlay ${isFilterDrawerOpen ? 'active' : ''}`} onClick={() => setIsFilterDrawerOpen(false)} />
-
-            <aside className={`filter-drawer ${isFilterDrawerOpen ? 'open' : ''}`}>
-                <div className="drawer-header">
-                    <h3>Filters</h3>
-                    <button className="close-drawer" onClick={() => setIsFilterDrawerOpen(false)}>
-                        <X size={24} />
-                    </button>
-                </div>
-
-                <div className="drawer-content">
-                    <div className="filter-item">
-                        <label>Category</label>
-                        <select
-                            value={activeCategory}
-                            onChange={(e) => setActiveCategory(e.target.value)}
-                        >
-                            {categories.map(cat => (
-                                <option key={cat} value={cat}>{cat}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="filter-item">
-                        <label>Difficulty</label>
-                        <select
-                            value={levelFilter}
-                            onChange={(e) => setLevelFilter(e.target.value)}
-                        >
-                            <option value="All">All Levels</option>
-                            <option value="Beginner">Beginner</option>
-                            <option value="Intermediate">Intermediate</option>
-                            <option value="Advanced">Advanced</option>
-                        </select>
-                    </div>
-
-                    <div className="filter-item">
-                        <label>Price</label>
-                        <select
-                            value={priceFilter}
-                            onChange={(e) => setPriceFilter(e.target.value)}
-                        >
-                            <option value="All">All Prices</option>
-                            <option value="Free">Free</option>
-                            <option value="Paid">Paid</option>
-                        </select>
-                    </div>
-
-                    <button
-                        className="btn btn-primary apply-filters-btn"
-                        onClick={() => setIsFilterDrawerOpen(false)}
-                    >
-                        Apply Filters
-                    </button>
-                </div>
-            </aside>
-
-            <div className="container course-list-content">
-                {loading ? (
-                    <div className="flex-center py-20">
-                        <Loader2 className="spinner" size={40} color="var(--primary)" />
-                    </div>
-                ) : (
-                    <>
-                        <div className="results-info">
-                            Showing {filteredCourses.length} courses
+            <main className="course-list-content container">
+                {/* Course Grid */}
+                <div className="courses-results">
+                    {loading ? (
+                        <div className="flex-center py-20">
+                            <Loader2 className="spinner" size={40} color="var(--primary)" />
                         </div>
-
-                        <main className="courses-main">
-                            <div className="course-list-grid">
+                    ) : (
+                        <>
+                            <p className="results-count">Showing {filteredCourses.length} results</p>
+                            <div className="course-grid">
                                 {filteredCourses.map(course => (
                                     <CourseCard key={course.id} course={course} />
                                 ))}
                             </div>
 
                             {filteredCourses.length === 0 && (
-                                <div className="no-results py-20 text-center glass-card w-full">
-                                    <h2 className="text-xl font-bold mb-2">No courses found</h2>
-                                    <p className="text-slate-500">Try adjusting your filters to find what you're looking for.</p>
+                                <div className="no-results py-20 text-center">
+                                    <p className="text-muted">No courses found matching your filters.</p>
                                 </div>
                             )}
-                        </main>
-                    </>
-                )}
-            </div>
+                        </>
+                    )}
+                </div>
+            </main>
+
+            {/* Mobile Filter Drawer Overlay */}
+            {isFilterDrawerOpen && (
+                <div className="filter-drawer-overlay" onClick={() => setIsFilterDrawerOpen(false)}>
+                    <div className="filter-drawer" onClick={e => e.stopPropagation()}>
+                        <div className="drawer-header">
+                            <h2>Filters</h2>
+                            <button onClick={() => setIsFilterDrawerOpen(false)}>
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <div className="drawer-body">
+                            <div className="filter-group">
+                                <h3>Category</h3>
+                                <div className="filter-options">
+                                    <select
+                                        className="filter-select"
+                                        value={activeCategory}
+                                        onChange={(e) => setActiveCategory(e.target.value)}
+                                    >
+                                        {categories.map(cat => (
+                                            <option key={cat} value={cat}>{cat === 'All' ? 'All Categories' : cat}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="filter-group">
+                                <h3>Price</h3>
+                                <div className="filter-options">
+                                    <select
+                                        className="filter-select"
+                                        value={priceFilter}
+                                        onChange={(e) => setPriceFilter(e.target.value)}
+                                    >
+                                        <option value="All">All Prices</option>
+                                        <option value="Free">Free</option>
+                                        <option value="Paid">Paid</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="filter-group">
+                                <h3>Level</h3>
+                                <div className="filter-options">
+                                    <select
+                                        className="filter-select"
+                                        value={levelFilter}
+                                        onChange={(e) => setLevelFilter(e.target.value)}
+                                    >
+                                        <option value="All">All Levels</option>
+                                        <option value="Beginner">Beginner</option>
+                                        <option value="Intermediate">Intermediate</option>
+                                        <option value="Advanced">Advanced</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="drawer-footer">
+                            <button className="btn btn-primary w-full" onClick={() => setIsFilterDrawerOpen(false)}>
+                                Show Results
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

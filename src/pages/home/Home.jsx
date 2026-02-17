@@ -44,12 +44,10 @@ const Home = () => {
 
     const fetchCoursesByCategory = async (category) => {
         setFetchLoading(true);
-        console.log('Fetching courses for category:', category);
         try {
-            // Simplified query: removed profiles join which might be failing due to FK target mismatch
             const selectQuery = category === "All"
-                ? "*, categories(name)"
-                : "*, categories!inner(name)";
+                ? "*, categories (name)"
+                : "*, categories!inner (name)";
 
             let query = supabase
                 .from('courses')
@@ -69,7 +67,6 @@ const Home = () => {
                 throw courseError;
             }
 
-            console.log('Fetched courses:', courseData);
             setCourses(courseData || []);
         } catch (error) {
             console.error('Error fetching courses:', error);

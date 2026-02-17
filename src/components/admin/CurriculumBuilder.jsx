@@ -1,11 +1,74 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, ChevronDown, ChevronUp, Video, FileText, GripVertical, Edit3 } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, Video, FileText, GripVertical, Edit3, Loader2, Link as LinkIcon, Download } from 'lucide-react';
+import { uploadFile } from '../../utils/cloudinary';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './CurriculumBuilder.css';
 
 const CurriculumBuilder = ({ modules, setModules }) => {
     const [activeModule, setActiveModule] = useState(null);
+    const [uploadingState, setUploadingState] = useState({}); // { lessonId: boolean }
+
+    const handleResourceUpload = async (moduleId, lessonId, e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setUploadingState(prev => ({ ...prev, [lessonId]: true }));
+        try {
+            const result = await uploadFile(file);
+            const newResource = {
+                id: Date.now() + Math.random(),
+                title: file.name,
+                file_url: result.url,
+                file_type: result.format || file.type.split('/')[1] || 'file',
+                file_size: (result.bytes / 1024 / 1024).toFixed(2) + ' MB'
+            };
+
+            setModules(modules.map(m => {
+                if (m.id === moduleId) {
+                    return {
+                        ...m,
+                        lessons: m.lessons.map(l => {
+                            if (l.id === lessonId) {
+                                return {
+                                    ...l,
+                                    resources: [...(l.resources || []), newResource]
+                                };
+                            }
+                            return l;
+                        })
+                    };
+                }
+                return m;
+            }));
+        } catch (error) {
+            console.error('Resource upload failed:', error);
+            alert('Upload failed: ' + error.message);
+        } finally {
+            setUploadingState(prev => ({ ...prev, [lessonId]: false }));
+            e.target.value = ''; // Reset input
+        }
+    };
+
+    const removeResource = (moduleId, lessonId, resourceId) => {
+        setModules(modules.map(m => {
+            if (m.id === moduleId) {
+                return {
+                    ...m,
+                    lessons: m.lessons.map(l => {
+                        if (l.id === lessonId) {
+                            return {
+                                ...l,
+                                resources: l.resources.filter(r => r.id !== resourceId)
+                            };
+                        }
+                        return l;
+                    })
+                };
+            }
+            return m;
+        }));
+    };
 
     // Deduplicate IDs on mount/update to fix existing corrupt data
     useEffect(() => {
@@ -72,7 +135,8 @@ const CurriculumBuilder = ({ modules, setModules }) => {
                         type: type, // 'video', 'reading'
                         duration: '0:00',
                         video_url: '',
-                        reading_content: ''
+                        reading_content: '',
+                        resources: []
                     }]
                 };
             }
@@ -196,6 +260,50 @@ const CurriculumBuilder = ({ modules, setModules }) => {
                                                     </div>
                                                 </div>
                                             )}
+
+                                            {/* Resources Section */}
+                                            <div className="lesson-content-field">
+                                                <label>Downloadable Resources</label>
+                                                <div className="resources-manager">
+                                                    {lesson.resources && lesson.resources.length > 0 && (
+                                                        <div className="builder-resources-list">
+                                                            {lesson.resources.map(res => (
+                                                                <div key={res.id} className="builder-resource-item">
+                                                                    <div className="res-main">
+                                                                        <FileText size={14} />
+                                                                        <span className="res-title">{res.title}</span>
+                                                                        <span className="res-meta">({res.file_size})</span>
+                                                                    </div>
+                                                                    <button className="icon-btn delete" onClick={() => removeResource(module.id, lesson.id, res.id)}>
+                                                                        <Trash2 size={12} />
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+
+                                                    <div className="resource-upload-box">
+                                                        <input
+                                                            type="file"
+                                                            id={`res-upload-${lesson.id}`}
+                                                            hidden
+                                                            onChange={(e) => handleResourceUpload(module.id, lesson.id, e)}
+                                                        />
+                                                        <button
+                                                            className="btn-add-resource"
+                                                            onClick={() => document.getElementById(`res-upload-${lesson.id}`).click()}
+                                                            disabled={uploadingState[lesson.id]}
+                                                        >
+                                                            {uploadingState[lesson.id] ? (
+                                                                <><Loader2 className="spinner" size={14} /> Uploading...</>
+                                                            ) : (
+                                                                <><Plus size={14} /> Add Resource</>
+                                                            )}
+                                                        </button>
+                                                        <span className="upload-hint">Upload PDFs, ZIPs, or Docs for students</span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

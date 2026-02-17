@@ -20,12 +20,13 @@ const CoursePlayer = () => {
     const [discussions, setDiscussions] = useState([]);
     const [userNote, setUserNote] = useState('');
     const [noteSaving, setNoteSaving] = useState(false);
+    const [replyingTo, setReplyingTo] = useState(null); // { id: string, name: string }
 
     useEffect(() => {
         if (id) {
             fetchCourseAndProgress();
         }
-    }, [id, user]);
+    }, [id, user?.id]);
 
     // Track lesson progress & fetch details whenever activeLesson changes
     useEffect(() => {
@@ -33,7 +34,7 @@ const CoursePlayer = () => {
             trackProgress(activeLesson);
             fetchLessonDetails(activeLesson);
         }
-    }, [activeLesson, user, id]);
+    }, [activeLesson, user?.id, id]);
 
     const fetchLessonDetails = async (lessonId) => {
         try {
@@ -49,7 +50,7 @@ const CoursePlayer = () => {
                 .from('lesson_discussions')
                 .select('*, profiles:user_id(full_name, avatar_url)')
                 .eq('lesson_id', lessonId)
-                .order('created_at', { ascending: false });
+                .order('created_at', { ascending: true }); // Ascending for logical thread flow
             setDiscussions(discData || []);
 
             // 3. Fetch User Note
@@ -207,7 +208,7 @@ const CoursePlayer = () => {
 
     const handlePostQuestion = async (e) => {
         e.preventDefault();
-        const title = e.target.title.value;
+        const title = e.target.title?.value;
         const content = e.target.content.value;
 
         try {
@@ -216,12 +217,14 @@ const CoursePlayer = () => {
                 .insert([{
                     lesson_id: activeLesson,
                     user_id: user.id,
-                    title,
-                    content
+                    title: title || null,
+                    content,
+                    parent_id: replyingTo?.id || null
                 }]);
 
             if (error) throw error;
             setIsAskingQuestion(false);
+            setReplyingTo(null);
             fetchLessonDetails(activeLesson); // Refresh discussions
         } catch (error) {
             console.error('Error posting question:', error);
@@ -318,7 +321,9 @@ const CoursePlayer = () => {
                                 </div>
 
                                 <div className="instructor-info">
-                                    <h4>{instructor?.full_name || 'Instructor'}</h4>
+                                    <h4>{instructor?.id ? (
+                                        <Link to={`/instructor/${instructor.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>{instructor.full_name}</Link>
+                                    ) : (instructor?.full_name || 'Instructor')}</h4>
                                     <div className="instructor-email">
                                         <Mail size={16} />
                                         {instructor?.email}
@@ -384,49 +389,106 @@ const CoursePlayer = () => {
                     </div>
                 );
             case 'discussions':
+                const renderDiscussionItem = (disc, depth = 0) => {
+                    const replies = discussions.filter(d => d.parent_id === disc.id);
+                    const isReply = depth > 0;
+
+                    return (
+                        <div key={disc.id} className={`discussion-item-wrap ${isReply ? 'reply-nested' : ''}`} style={{ '--depth': depth }}>
+                            <div className="discussion-item glass-card border-0">
+                                <div className="disc-user-header">
+                                    <div className="disc-user-avatar">
+                                        {disc.profiles?.avatar_url ? (
+                                            <img src={disc.profiles.avatar_url} alt={disc.profiles.full_name} />
+                                        ) : (
+                                            <div className="avatar-initials-sm">{disc.profiles?.full_name?.charAt(0) || 'U'}</div>
+                                        )}
+                                    </div>
+                                    <div className="disc-user-meta">
+                                        <span className="disc-author">{disc.profiles?.full_name || 'Anonymous User'}</span>
+                                        <span className="disc-date">{new Date(disc.created_at).toLocaleDateString()}</span>
+                                    </div>
+                                </div>
+
+                                <div className="disc-content-body">
+                                    {disc.title && <h4 className="disc-title">{disc.title}</h4>}
+                                    <p className="disc-text">{disc.content}</p>
+                                </div>
+
+                                <div className="disc-actions">
+                                    <button
+                                        className="btn-reply-action"
+                                        onClick={() => {
+                                            setReplyingTo({ id: disc.id, name: disc.profiles?.full_name });
+                                            setIsAskingQuestion(true);
+                                        }}
+                                    >
+                                        <MessageSquare size={14} /> Reply
+                                    </button>
+                                </div>
+                            </div>
+
+                            {replies.length > 0 && depth < 3 && (
+                                <div className="replies-container">
+                                    {replies.map(reply => renderDiscussionItem(reply, depth + 1))}
+                                </div>
+                            )}
+                        </div>
+                    );
+                };
+
                 if (isAskingQuestion) {
                     return (
                         <div className="p-tab-panel">
                             <div className="form-head-actions">
-                                <h3>Ask a Question</h3>
-                                <button className="btn-text" onClick={() => setIsAskingQuestion(false)}>Back to Discussions</button>
+                                <h3>{replyingTo ? `Replying to ${replyingTo.name}` : 'Ask a Question'}</h3>
+                                <button className="btn-text" onClick={() => {
+                                    setIsAskingQuestion(false);
+                                    setReplyingTo(null);
+                                }}>Back to Discussions</button>
                             </div>
                             <form className="question-form glass-card border-0" onSubmit={handlePostQuestion}>
+                                {!replyingTo && (
+                                    <div className="input-group">
+                                        <label>Question Title</label>
+                                        <input name="title" type="text" placeholder="Summary of your question" required />
+                                    </div>
+                                )}
                                 <div className="input-group">
-                                    <label>Question Title</label>
-                                    <input name="title" type="text" placeholder="e.g. How do I implement lifecycle methods in functional components?" required />
-                                </div>
-                                <div className="input-group">
-                                    <label>Details</label>
-                                    <textarea name="content" placeholder="Describe your problem in detail..." rows="6" required></textarea>
+                                    <label>{replyingTo ? 'Your Reply' : 'Details'}</label>
+                                    <textarea
+                                        name="content"
+                                        placeholder={replyingTo ? "Write your helpful response..." : "Describe your problem in detail..."}
+                                        rows="6"
+                                        required
+                                    ></textarea>
                                 </div>
                                 <div className="form-actions">
-                                    <button type="button" className="btn btn-outline" onClick={() => setIsAskingQuestion(false)}>Cancel</button>
-                                    <button type="submit" className="btn btn-primary">Post Question</button>
+                                    <button type="button" className="btn btn-outline" onClick={() => {
+                                        setIsAskingQuestion(false);
+                                        setReplyingTo(null);
+                                    }}>Cancel</button>
+                                    <button type="submit" className="btn btn-primary">{replyingTo ? 'Post Reply' : 'Post Question'}</button>
                                 </div>
                             </form>
                         </div>
                     );
                 }
+
+                const rootDiscussions = [...discussions].filter(d => !d.parent_id).reverse();
+
                 return (
                     <div className="p-tab-panel">
                         <div className="tab-header">
                             <h3>Community Q&A</h3>
-                            <button className="btn btn-primary btn-sm" onClick={() => setIsAskingQuestion(true)}>Ask a Question</button>
+                            <button className="btn btn-primary btn-sm" onClick={() => {
+                                setReplyingTo(null);
+                                setIsAskingQuestion(true);
+                            }}>Ask a Question</button>
                         </div>
-                        {discussions.length > 0 ? (
+                        {rootDiscussions.length > 0 ? (
                             <div className="discussions-list d-flex flex-column gap-3">
-                                {discussions.map((disc) => (
-                                    <div key={disc.id} className="discussion-item glass-card border-0 p-4">
-                                        <h4 className="mb-2">{disc.title || 'No Title'}</h4>
-                                        <p className="mb-3 text-secondary">{disc.content}</p>
-                                        <div className="d-flex align-items-center gap-3 text-muted" style={{ fontSize: '0.9rem' }}>
-                                            <span>{disc.profiles?.full_name || 'User'}</span>
-                                            <span>•</span>
-                                            <span>{new Date(disc.created_at).toLocaleDateString()}</span>
-                                        </div>
-                                    </div>
-                                ))}
+                                {rootDiscussions.map((disc) => renderDiscussionItem(disc))}
                             </div>
                         ) : (
                             <div className="discussion-placeholder glass-card border-0">

@@ -89,7 +89,7 @@ const CourseCreateView = () => {
                 // Fetch modules and lessons
                 const { data: modulesData, error: modulesError } = await supabase
                     .from('course_modules')
-                    .select('*, course_lessons(*)')
+                    .select('*, course_lessons(*, lesson_resources(*))')
                     .eq('course_id', id)
                     .order('order_index');
 
@@ -105,7 +105,8 @@ const CourseCreateView = () => {
                             type: lesson.content_type,
                             video_url: lesson.video_url || '',
                             reading_content: lesson.reading_content || '',
-                            duration: lesson.duration
+                            duration: lesson.duration,
+                            resources: lesson.lesson_resources || []
                         }))
                 }));
 
@@ -199,10 +200,32 @@ const CourseCreateView = () => {
                     }));
 
                     if (lessonsToSave.length > 0) {
-                        const { error: lessonsError } = await supabase
+                        const { data: savedLessons, error: lessonsError } = await supabase
                             .from('course_lessons')
-                            .insert(lessonsToSave);
+                            .insert(lessonsToSave)
+                            .select();
                         if (lessonsError) throw lessonsError;
+
+                        // Save resources for each lesson
+                        for (let l = 0; l < savedLessons.length; l++) {
+                            const savedLesson = savedLessons[l];
+                            const originalLesson = module.lessons[l];
+
+                            if (originalLesson.resources && originalLesson.resources.length > 0) {
+                                const resourcesToSave = originalLesson.resources.map(res => ({
+                                    lesson_id: savedLesson.id,
+                                    title: res.title,
+                                    file_url: res.file_url,
+                                    file_type: res.file_type,
+                                    file_size: res.file_size
+                                }));
+
+                                const { error: resError } = await supabase
+                                    .from('lesson_resources')
+                                    .insert(resourcesToSave);
+                                if (resError) throw resError;
+                            }
+                        }
                     }
                 }
             } else {
@@ -265,10 +288,32 @@ const CourseCreateView = () => {
                     }));
 
                     if (lessonsToSave.length > 0) {
-                        const { error: lessonsError } = await supabase
+                        const { data: savedLessons, error: lessonsError } = await supabase
                             .from('course_lessons')
-                            .insert(lessonsToSave);
+                            .insert(lessonsToSave)
+                            .select();
                         if (lessonsError) throw lessonsError;
+
+                        // Save resources for each lesson
+                        for (let l = 0; l < savedLessons.length; l++) {
+                            const savedLesson = savedLessons[l];
+                            const originalLesson = module.lessons[l];
+
+                            if (originalLesson.resources && originalLesson.resources.length > 0) {
+                                const resourcesToSave = originalLesson.resources.map(res => ({
+                                    lesson_id: savedLesson.id,
+                                    title: res.title,
+                                    file_url: res.file_url,
+                                    file_type: res.file_type,
+                                    file_size: res.file_size
+                                }));
+
+                                const { error: resError } = await supabase
+                                    .from('lesson_resources')
+                                    .insert(resourcesToSave);
+                                if (resError) throw resError;
+                            }
+                        }
                     }
                 }
             }

@@ -7,7 +7,6 @@ const CourseCard = ({ course }) => {
     // Standardize data from different sources (Mock vs Supabase)
     const title = course.title || 'Untitled Course';
     const image = course.image_url || course.image || 'https://via.placeholder.com/300x170';
-    const instructor = course.profiles?.full_name || course.instructor || 'Expert Instructor';
     const category = course.categories?.name || course.category || 'Uncategorized';
     const rating = course.rating || '4.8';
     const reviews = course.reviews || '1.2k';
@@ -23,7 +22,6 @@ const CourseCard = ({ course }) => {
             <div className="course-info">
                 <h3>{title}</h3>
                 <p className="course-description">{description}</p>
-                <p className="instructor">By {instructor}</p>
 
                 <div className="course-meta">
                     <div className="rating">

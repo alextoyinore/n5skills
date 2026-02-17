@@ -25,6 +25,7 @@ import CourseList from './pages/course/CourseList';
 import LearningDashboard from './pages/dashboard/LearningDashboard';
 import CoursePlayer from './pages/course/CoursePlayer';
 import EnrolledCourses from './pages/dashboard/EnrolledCourses';
+import InstructorCourses from './pages/course/InstructorCourses';
 import Subscriptions from './pages/legal/Subscriptions';
 import Business from './pages/legal/Business';
 import Government from './pages/legal/Government';
@@ -66,6 +67,7 @@ function AppContent() {
           {/* Course Routes */}
           <Route path="/courses" element={<CourseList />} />
           <Route path="/course/:id" element={<CourseDetail />} />
+          <Route path="/instructor/:id" element={<InstructorCourses />} />
           <Route path="/learn/:id" element={
             <ProtectedRoute>
               <CoursePlayer />
