@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Star, Clock, Users, Globe, CheckCircle, PlayCircle, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Star, Clock, Users, Globe, CheckCircle, PlayCircle, Loader2, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react';
 import { supabase } from '../../utils/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
+import StarRating from '../../components/ui/StarRating';
+import ReviewForm from '../../components/course/ReviewForm';
+import ReviewList from '../../components/course/ReviewList';
 import './CourseDetail.css';
 
 const CourseDetail = () => {
@@ -16,6 +19,8 @@ const CourseDetail = () => {
     const [curriculum, setCurriculum] = useState([]);
     const [showFullDesc, setShowFullDesc] = useState(false);
     const [expandedModules, setExpandedModules] = useState({});
+    const [reviewStats, setReviewStats] = useState({ average: 0, count: 0 });
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -110,7 +115,35 @@ const CourseDetail = () => {
         };
 
         fetchData();
-    }, [id, user?.id]);
+        fetchReviewStats();
+    }, [id, user?.id, refreshTrigger]);
+
+    const fetchReviewStats = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('course_reviews')
+                .select('rating')
+                .eq('course_id', id);
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                const sum = data.reduce((acc, curr) => acc + curr.rating, 0);
+                setReviewStats({
+                    average: (sum / data.length).toFixed(1),
+                    count: data.length
+                });
+            } else {
+                setReviewStats({ average: 0, count: 0 });
+            }
+        } catch (error) {
+            console.error('Error fetching review stats:', error);
+        }
+    };
+
+    const handleReviewSubmit = () => {
+        setRefreshTrigger(prev => prev + 1);
+    };
 
     const handleEnroll = async () => {
         if (!user) {
@@ -204,9 +237,9 @@ const CourseDetail = () => {
                     <div className="detail-hero-meta">
                         <div className="meta-group">
                             <div className="rating">
-                                <Star className="text-amber-500 fill-amber-500" size={20} color="#F59E0B" fill="#F59E0B" />
-                                <span>4.8</span>
-                                <span className="reviews-count">(2,450 ratings)</span>
+                                <StarRating rating={reviewStats.average} size={18} />
+                                <span>{reviewStats.average || '0.0'}</span>
+                                <span className="reviews-count">({reviewStats.count} {reviewStats.count === 1 ? 'review' : 'reviews'})</span>
                             </div>
                             <div className="students">
                                 <Users size={20} />
@@ -385,6 +418,39 @@ const CourseDetail = () => {
                             </div>
                         </div>
                     )}
+
+                    {/* Ratings & Reviews Section */}
+                    <div className="detail-section" id="reviews">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
+                            <MessageSquare size={28} className="text-primary" />
+                            <h2 style={{ fontSize: '1.75rem', fontWeight: '800', margin: 0, color: 'var(--dark)' }}>
+                                Student Reviews
+                            </h2>
+                        </div>
+
+                        <div className="reviews-grid">
+                            <div className="reviews-submission">
+                                <ReviewForm courseId={id} onReviewSubmit={handleReviewSubmit} />
+                            </div>
+
+                            <div className="reviews-display">
+                                <div className="reviews-summary-premium glass-card" style={{ padding: '1.5rem', marginBottom: '2rem', borderRadius: 'var(--radius-lg)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                                        <div style={{ fontSize: '3rem', fontWeight: '800', color: 'var(--primary)' }}>
+                                            {reviewStats.average || '0.0'}
+                                        </div>
+                                        <div>
+                                            <StarRating rating={reviewStats.average} size={20} />
+                                            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
+                                                Course Rating ({reviewStats.count} reviews)
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <ReviewList courseId={id} refreshTrigger={refreshTrigger} />
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Right Column / Sidebar */}
