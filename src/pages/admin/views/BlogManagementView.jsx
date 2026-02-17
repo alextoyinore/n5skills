@@ -139,7 +139,7 @@ const BlogManagementView = () => {
                                 filteredPosts.map(post => (
                                     <tr key={post.id}>
                                         <td>
-                                            <div className="post-title-cell">
+                                            <div className="post-title-cell" style={{ display: 'flex', flexDirection: 'column' }}>
                                                 <strong>{post.title}</strong>
                                                 <small>{post.slug}</small>
                                             </div>
