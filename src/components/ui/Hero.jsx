@@ -7,20 +7,32 @@ import { useSettings } from '../../context/SettingsContext';
 import { supabase } from '../../utils/supabaseClient';
 import './Hero.css';
 
+// Simple module-level cache to persist data across component unmounts (e.g. navigation)
+let heroCache = {
+    userId: null,
+    data: []
+};
+
 const Hero = () => {
     const { user } = useAuth();
     const { settings, formatPlatformName } = useSettings();
-    const [recentlyWatched, setRecentlyWatched] = useState([]);
+    const [recentlyWatched, setRecentlyWatched] = useState(
+        (user && heroCache.userId === user.id) ? heroCache.data : []
+    );
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (user) {
+        if (user?.id) {
             fetchRecentlyWatched();
         }
-    }, [user]);
+    }, [user?.id]);
 
     const fetchRecentlyWatched = async () => {
-        setLoading(true);
+        // Only show loading if we don't already have data for this user
+        if (recentlyWatched.length === 0) {
+            setLoading(true);
+        }
+
         try {
             // 1. Fetch enrollments with progress and last lesson
             const { data: enrollments, error: enrollError } = await supabase
@@ -79,6 +91,11 @@ const Hero = () => {
             }).filter(Boolean);
 
             setRecentlyWatched(processed);
+            // Update cache
+            heroCache = {
+                userId: user.id,
+                data: processed
+            };
         } catch (error) {
             console.error('Error fetching hero data:', error);
         } finally {

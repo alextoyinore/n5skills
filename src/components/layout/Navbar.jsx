@@ -40,6 +40,7 @@ const Navbar = () => {
   const megaMenuRef = useRef(null);
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const profileRef = useRef(null);
 
   useEffect(() => {
@@ -91,6 +92,15 @@ const Navbar = () => {
     if (isMegaMenuOpen) setIsMegaMenuOpen(false);
   };
 
+  const handleSearch = (e) => {
+    if (e.key === 'Enter' || e.type === 'click') {
+      if (searchQuery.trim()) {
+        navigate(`/courses?search=${encodeURIComponent(searchQuery.trim())}`);
+        setIsMobileSearchOpen(false);
+      }
+    }
+  };
+
   return (
     <>
       <nav className={`navbar ${scrolled ? 'scrolled' : ''} ${isMobileMenuOpen ? 'mobile-menu-open' : ''} ${isMegaMenuOpen ? 'mega-active' : ''} ${isInverted && !scrolled && !isMegaMenuOpen ? 'inverted' : ''}`}>
@@ -104,8 +114,19 @@ const Navbar = () => {
           </Link>
 
           <div className="search-bar">
-            <Search size={16} className="search-icon" />
-            <input type="text" placeholder="What do you want to learn?" />
+            <Search
+              size={16}
+              className="search-icon"
+              onClick={handleSearch}
+              style={{ cursor: 'pointer' }}
+            />
+            <input
+              type="text"
+              placeholder="What do you want to learn?"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearch}
+            />
           </div>
 
           <div className={`nav-links ${isMobileMenuOpen ? 'active' : ''}`}>
@@ -294,11 +315,18 @@ const Navbar = () => {
             </button>
           </div>
           <div className="mobile-search-input-wrapper">
-            <Search size={24} className="search-icon-mobile" />
+            <Search
+              size={24}
+              className="search-icon-mobile"
+              onClick={handleSearch}
+            />
             <input
               type="text"
               placeholder="Search for anything..."
               autoFocus
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearch}
             />
           </div>
         </div>

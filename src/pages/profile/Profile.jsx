@@ -239,7 +239,7 @@ const Profile = () => {
                                     alignItems: 'center'
                                 }}>
                                     <span>{user?.role || 'Student'}</span>
-                                    {user?.role === 'admin' && (
+                                    {(user?.role === 'admin' || user?.role === 'superadmin') && (
                                         <a href="/admin" className="admin-link-btn" style={{
                                             fontSize: '0.8rem',
                                             padding: '4px 8px',

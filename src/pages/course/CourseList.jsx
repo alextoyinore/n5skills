@@ -16,6 +16,7 @@ const CourseList = () => {
     const [activeCategory, setActiveCategory] = useState(initialCategory);
     const [priceFilter, setPriceFilter] = useState('All');
     const [levelFilter, setLevelFilter] = useState('All');
+    const [searchTerm, setSearchTerm] = useState(queryParams.get('search') || '');
     const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
     useEffect(() => {
@@ -23,8 +24,9 @@ const CourseList = () => {
     }, []);
 
     useEffect(() => {
-        const category = new URLSearchParams(location.search).get('category') || 'All';
-        setActiveCategory(category);
+        const params = new URLSearchParams(location.search);
+        setActiveCategory(params.get('category') || 'All');
+        setSearchTerm(params.get('search') || '');
     }, [location.search]);
 
     const fetchInitialData = async () => {
@@ -68,7 +70,13 @@ const CourseList = () => {
         const categoryMatch = activeCategory === 'All' || (course.categories?.name || course.category) === activeCategory;
         const levelMatch = levelFilter === 'All' || course.level === levelFilter;
         const priceMatch = priceFilter === 'All' || (priceFilter === 'Free' ? course.price === 0 : course.price > 0);
-        return categoryMatch && levelMatch && priceMatch;
+
+        const searchMatch = !searchTerm ||
+            course.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            course.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            course.short_description?.toLowerCase().includes(searchTerm.toLowerCase());
+
+        return categoryMatch && levelMatch && priceMatch && searchMatch;
     });
 
     return (

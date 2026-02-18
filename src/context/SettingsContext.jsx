@@ -14,7 +14,8 @@ export const useSettings = () => {
 export const SettingsProvider = ({ children }) => {
     const [settings, setSettings] = useState({
         platform_name: '95 SKILLS',
-        support_email: 'support@95skills.com'
+        support_email: 'support@95skills.com',
+        enable_oauth: true
     });
     const [loading, setLoading] = useState(true);
 

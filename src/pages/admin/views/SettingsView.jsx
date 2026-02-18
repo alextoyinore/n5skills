@@ -7,7 +7,8 @@ const SettingsView = () => {
     const [settings, setSettings] = useState({
         platform_name: '',
         support_email: '',
-        logo_url: null
+        logo_url: null,
+        enable_oauth: true
     });
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -65,6 +66,7 @@ const SettingsView = () => {
                     platform_name: settings.platform_name,
                     support_email: settings.support_email,
                     logo_url: settings.logo_url,
+                    enable_oauth: settings.enable_oauth,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', settings.id);
@@ -184,6 +186,43 @@ const SettingsView = () => {
                                     fontFamily: 'inherit'
                                 }}
                             />
+                        </div>
+                        <div className="form-group" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                            <div>
+                                <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.25rem' }}>Enable OAuth Authentication</label>
+                                <p style={{ fontSize: '0.85rem', color: '#64748B' }}>Allow users to sign in with Google and GitHub.</p>
+                            </div>
+                            <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '24px' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.enable_oauth}
+                                    onChange={(e) => setSettings({ ...settings, enable_oauth: e.target.checked })}
+                                    style={{ opacity: 0, width: 0, height: 0 }}
+                                />
+                                <span style={{
+                                    position: 'absolute',
+                                    cursor: 'pointer',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    backgroundColor: settings.enable_oauth ? 'var(--primary)' : '#ccc',
+                                    transition: '.4s',
+                                    borderRadius: '24px'
+                                }}>
+                                    <span style={{
+                                        position: 'absolute',
+                                        content: '""',
+                                        height: '18px',
+                                        width: '18px',
+                                        left: settings.enable_oauth ? '28px' : '4px',
+                                        bottom: '3px',
+                                        backgroundColor: 'white',
+                                        transition: '.4s',
+                                        borderRadius: '50%'
+                                    }}></span>
+                                </span>
+                            </label>
                         </div>
                     </div>
                 </div>
