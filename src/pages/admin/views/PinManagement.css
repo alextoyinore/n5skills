@@ -1,0 +1,106 @@
+.pin-management {
+    padding: 0;
+}
+
+/* Generator Section */
+.generator-focused-section {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-down {
+    animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.border-primary-subtle {
+    border: 1px solid rgba(0, 43, 185, 0.1) !important;
+}
+
+/* PIN Display */
+.pin-code-display {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--primary);
+    background: rgba(0, 43, 185, 0.05);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+    border: 1px solid rgba(0, 43, 185, 0.1);
+}
+
+.icon-btn-sm {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    border: 1px solid #E2E8F0;
+    background: #fff;
+    color: #94A3B8;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.icon-btn-sm:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: #F8FAFC;
+}
+
+/* User Info Layout */
+.user-info-brief {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.user-info-brief .font-bold {
+    color: #1E293B;
+    font-size: 0.9rem;
+}
+
+/* Table Enhancements */
+.pin-management .activity-table td {
+    padding: 1.25rem 1.5rem;
+}
+
+.pin-management .activity-table tr:hover td {
+    background-color: #F8FAFC;
+}
+
+/* Badge Refinements */
+.pin-management .badge-status {
+    padding: 0.35rem 0.85rem;
+    letter-spacing: 0.02em;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .pin-management .admin-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+
+    .pin-management .view-filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .pin-management .search-bar {
+        width: 100% !important;
+    }
+}

@@ -160,7 +160,11 @@ const CourseDetail = () => {
         try {
             const { error } = await supabase
                 .from('enrollments')
-                .insert([{ user_id: user.id, course_id: id }]);
+                .insert([{
+                    user_id: user.id,
+                    course_id: id,
+                    is_unlocked: course.is_free // Auto-unlock if course is free
+                }]);
 
             if (error) throw error;
             setIsEnrolled(true);

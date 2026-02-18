@@ -14,7 +14,8 @@ import {
     ExternalLink,
     ChevronLeft,
     ChevronRight,
-    User
+    User,
+    Key
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -47,6 +48,7 @@ const AdminDashboard = () => {
         if (path.includes('/admin/blog')) return 'blog';
         if (path.includes('/admin/analytics')) return 'analytics';
         if (path.includes('/admin/settings')) return 'settings';
+        if (path.includes('/admin/pins')) return 'pins';
         return 'dashboard';
     };
 
@@ -82,6 +84,7 @@ const AdminDashboard = () => {
         { id: 'categories', label: 'Categories', icon: Tag, path: '/admin/categories' },
         { id: 'users', label: 'Users', icon: Users, path: '/admin/users' },
         { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
+        { id: 'pins', label: 'PIN Management', icon: Key, path: '/admin/pins' },
         { id: 'settings', label: 'Settings', icon: Settings, path: '/admin/settings' },
     ];
 

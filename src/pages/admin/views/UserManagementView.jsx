@@ -104,6 +104,7 @@ const UserManagementView = () => {
                     <option value="student">Student</option>
                     <option value="instructor">Instructor</option>
                     <option value="admin">Admin</option>
+                    <option value="superadmin">Superadmin</option>
                 </select>
             </div>
             <div className="activity-table glass-card">
@@ -146,6 +147,7 @@ const UserManagementView = () => {
                                                 <option value="student">Student</option>
                                                 <option value="instructor">Instructor</option>
                                                 <option value="admin">Admin</option>
+                                                <option value="superadmin">Superadmin</option>
                                             </select>
                                         ) : (
                                             <span className={`badge-role ${user.role}`}>{user.role}</span>

@@ -16,7 +16,7 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    if (adminOnly && user.role !== 'admin') {
+    if (adminOnly && user.role !== 'admin' && user.role !== 'superadmin') {
         // Redirect non-admins to home if they try to access admin pages
         return <Navigate to="/" replace />;
     }
