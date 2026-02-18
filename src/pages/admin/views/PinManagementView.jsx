@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Key, Plus, Copy, Check, Trash2, Search, Filter, Loader2, ExternalLink } from 'lucide-react';
+import { Key, Plus, Copy, Check, Trash2, Search, Filter, Loader2, ExternalLink, X } from 'lucide-react';
 import { supabase } from '../../../utils/supabaseClient';
 import './PinManagement.css';
 
@@ -46,14 +46,15 @@ const PinManagementView = () => {
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
-            setPins(data || []);
+            const pinsData = data || [];
+            setPins(pinsData);
 
             // Calculate stats
-            const used = data.filter(p => p.is_used).length;
+            const usedCount = pinsData.filter(p => p.is_used).length;
             setStats({
-                total: data.length,
-                available: data.length - used,
-                used
+                total: pinsData.length,
+                available: pinsData.length - usedCount,
+                used: usedCount
             });
         } catch (error) {
             console.error('Error fetching pins:', error);
@@ -171,31 +172,43 @@ const PinManagementView = () => {
 
             {showGenerator && (
                 <div className="generator-focused-section animate-slide-down">
-                    <div className="glass-card p-8 mb-8 border-primary-subtle">
-                        <div className="flex items-center justify-between gap-4 flex-wrap">
-                            <div className="flex-1">
-                                <h3 className="text-xl font-bold mb-2">Batch Generate Universal PINs</h3>
-                                <p className="text-muted text-sm">Universal PINs are not tied to a course. They associate with a course only upon redemption.</p>
+                    <div className="glass-card mb-8 premium-generator-card">
+                        <div className="generator-content">
+                            <div className="generator-text">
+                                <h3 className="text-xl font-bold mb-1">Batch Generate Universal PINs</h3>
+                                <p className="text-muted text-sm">Universal PINs are not tied to any course. Use them for general promotions or gift cards.</p>
                             </div>
-                            <div className="flex items-center gap-4">
-                                <div className="form-group mb-0" style={{ width: '200px' }}>
-                                    <input
-                                        type="number"
-                                        className="admin-input-premium"
-                                        value={pinCount}
-                                        onChange={(e) => setPinCount(parseInt(e.target.value))}
-                                        min="1"
-                                        max="100"
-                                        placeholder="Count (1-100)"
-                                    />
+                            <div className="generator-actions">
+                                <div className="input-with-label">
+                                    <label>Quantity</label>
+                                    <div className="form-group mb-0">
+                                        <input
+                                            type="number"
+                                            className="admin-input-premium"
+                                            value={pinCount}
+                                            onChange={(e) => setPinCount(parseInt(e.target.value))}
+                                            min="1"
+                                            max="100"
+                                            placeholder="10"
+                                        />
+                                    </div>
                                 </div>
                                 <button
-                                    className="btn btn-primary"
+                                    className="btn btn-primary generate-btn-large"
                                     onClick={generatePins}
                                     disabled={generating}
                                 >
-                                    {generating ? <Loader2 className="spinner" size={20} /> : <Plus size={20} />}
-                                    Create Batch
+                                    {generating ? (
+                                        <>
+                                            <Loader2 className="spinner" size={20} />
+                                            <span>Generating...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Plus size={20} />
+                                            <span>Create PIN Batch</span>
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>
