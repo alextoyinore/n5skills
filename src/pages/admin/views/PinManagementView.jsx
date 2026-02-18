@@ -172,7 +172,7 @@ const PinManagementView = () => {
 
             {showGenerator && (
                 <div className="generator-focused-section animate-slide-down">
-                    <div className="glass-card mb-8 premium-generator-card">
+                    <div className="glass-card mb-12 premium-generator-card">
                         <div className="generator-content">
                             <div className="generator-text">
                                 <h3 className="text-xl font-bold mb-1">Batch Generate Universal PINs</h3>
