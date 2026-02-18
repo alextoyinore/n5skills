@@ -15,7 +15,10 @@ import {
     ChevronLeft,
     ChevronRight,
     User,
-    Key
+    Key,
+    Star, // Added for Reviews
+    HelpCircle, // Added for FAQs
+    MessageSquare // Added for Contact Submissions
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -49,6 +52,9 @@ const AdminDashboard = () => {
         if (path.includes('/admin/analytics')) return 'analytics';
         if (path.includes('/admin/settings')) return 'settings';
         if (path.includes('/admin/pins')) return 'pins';
+        if (path.includes('/admin/reviews')) return 'reviews'; // Added
+        if (path.includes('/admin/faqs')) return 'faqs'; // Added
+        if (path.includes('/admin/contact-submissions')) return 'contact-submissions'; // Added
         return 'dashboard';
     };
 
@@ -85,6 +91,9 @@ const AdminDashboard = () => {
         { id: 'users', label: 'Users', icon: Users, path: '/admin/users' },
         { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
         { id: 'pins', label: 'PIN Management', icon: Key, path: '/admin/pins' },
+        { id: 'reviews', label: 'Reviews', icon: Star, path: '/admin/reviews' }, // Added
+        { id: 'faqs', label: 'FAQs', icon: HelpCircle, path: '/admin/faqs' }, // Added
+        { id: 'contact-submissions', label: 'Messages', icon: MessageSquare, path: '/admin/contact-submissions' }, // Added
         { id: 'settings', label: 'Settings', icon: Settings, path: '/admin/settings' },
     ];
 
@@ -115,15 +124,19 @@ const AdminDashboard = () => {
             <aside className={`admin-sidebar ${isSidebarOpen ? 'open' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
                 <div className="sidebar-header">
                     <div className="sidebar-logo-container">
-                        {settings.logo_url ? (
+                        {isCollapsed ? (
+                            <div className="sidebar-icon-badge">
+                                {settings.platform_name.substring(0, 2).toUpperCase()}
+                            </div>
+                        ) : settings.logo_url ? (
                             <div className="sidebar-logo-img-wrapper">
                                 <img src={settings.logo_url} alt={settings.platform_name} className="admin-logo-img" />
-                                {!isCollapsed && <span className="admin-suffix">Admin</span>}
+                                <span className="admin-suffix">Admin</span>
                             </div>
                         ) : (
                             <h3 style={{ letterSpacing: '-0.5px' }}>
                                 {formatPlatformName(settings.platform_name)}
-                                {!isCollapsed && <span className="admin-suffix"> Admin</span>}
+                                <span className="admin-suffix"> Admin</span>
                             </h3>
                         )}
                     </div>

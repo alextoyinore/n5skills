@@ -12,11 +12,13 @@ const Home = () => {
     const [courses, setCourses] = useState([]);
     const [categories, setCategories] = useState(["All"]);
     const [activeCategory, setActiveCategory] = useState("All");
+    const [testimonials, setTestimonials] = useState([]);
     const [loading, setLoading] = useState(true);
     const [fetchLoading, setFetchLoading] = useState(false);
 
     useEffect(() => {
         fetchInitialData();
+        fetchTestimonials();
     }, []);
 
     const fetchInitialData = async () => {
@@ -39,6 +41,28 @@ const Home = () => {
             console.error('Error fetching home categories:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchTestimonials = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('course_reviews')
+                .select(`
+                    id,
+                    rating,
+                    review_text,
+                    created_at,
+                    profiles:user_id (full_name, avatar_url),
+                    courses:course_id (title)
+                `)
+                .or('rating.eq.5,is_featured.eq.true')
+                .limit(6);
+
+            if (error) throw error;
+            setTestimonials(data || []);
+        } catch (error) {
+            console.error('Error fetching testimonials:', error);
         }
     };
 
@@ -128,6 +152,33 @@ const Home = () => {
                     </>
                 )}
             </section>
+
+            {testimonials.length > 0 && (
+                <section className="testimonials-section container py-20">
+                    <div className="section-header text-center mb-12">
+                        <h2 className="text-3xl font-bold">What Our Students Say</h2>
+                        <p className="text-slate-600">Join thousands of successful learners on their journey.</p>
+                    </div>
+                    <div className="testimonials-grid">
+                        {testimonials.map(t => (
+                            <div key={t.id} className="testimonial-card glass-card">
+                                <div className="testimonial-rating">
+                                    {[...Array(t.rating)].map((_, i) => (
+                                        <span key={i} className="text-yellow-400">★</span>
+                                    ))}
+                                </div>
+                                <p className="testimonial-text">"{t.review_text}"</p>
+                                <div className="testimonial-author">
+                                    <div className="author-info">
+                                        <strong>{t.profiles?.full_name}</strong>
+                                        <span>Learner, {t.courses?.title}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {!user && (
                 <section className="cta-banner container">

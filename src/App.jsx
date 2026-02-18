@@ -20,6 +20,9 @@ import AnalyticsView from './pages/admin/views/AnalyticsView';
 import SettingsView from './pages/admin/views/SettingsView';
 import ProfileUpdateView from './pages/admin/views/ProfileUpdateView';
 import PinManagementView from './pages/admin/views/PinManagementView';
+import ReviewManagementView from './pages/admin/views/ReviewManagementView';
+import ContactSubmissionsView from './pages/admin/views/ContactSubmissionsView';
+import FaqManagementView from './pages/admin/views/FaqManagementView';
 
 import CourseDetail from './pages/course/CourseDetail';
 import CourseList from './pages/course/CourseList';
@@ -36,6 +39,7 @@ import Cookies from './pages/legal/Cookies';
 import Blog from './pages/blog/Blog';
 import BlogDetail from './pages/blog/BlogDetail';
 import Profile from './pages/profile/Profile';
+import Faqs from './pages/support/Faqs';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { SettingsProvider } from './context/SettingsContext';
 import './App.css';
@@ -112,6 +116,9 @@ function AppContent() {
             <Route path="settings" element={<SettingsView />} />
             <Route path="profile" element={<ProfileUpdateView />} />
             <Route path="pins" element={<PinManagementView />} />
+            <Route path="reviews" element={<ReviewManagementView />} />
+            <Route path="contact-submissions" element={<ContactSubmissionsView />} />
+            <Route path="faqs" element={<FaqManagementView />} />
           </Route>
 
           {/* Legal & Informational Routes */}
@@ -123,6 +130,7 @@ function AppContent() {
           <Route path="/government" element={<Government />} />
           <Route path="/careers" element={<Careers />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/faqs" element={<Faqs />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:id" element={<BlogDetail />} />
         </Routes>

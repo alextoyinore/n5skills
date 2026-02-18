@@ -21,6 +21,23 @@
     height: 100vh;
     z-index: 50;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #E2E8F0 transparent;
+}
+
+.admin-sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.admin-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb {
+    background: #E2E8F0;
+    border-radius: 10px;
 }
 
 .admin-sidebar.collapsed {
@@ -76,6 +93,20 @@
     border-radius: 4px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+.sidebar-icon-badge {
+    width: 40px;
+    height: 40px;
+    background: var(--primary);
+    color: white;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 1px;
 }
 
 .sidebar-links {
@@ -1204,4 +1235,63 @@ tr:last-child td {
 .filter-buttons {
     display: flex;
     gap: 0.5rem;
+}
+
+/* FAQ Management Form */
+.faq-add-form {
+    padding: 2rem 2.5rem;
+    margin-bottom: 2rem;
+}
+
+.faq-form-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #0F172A;
+    margin: 0 0 1.5rem 0;
+}
+
+.faq-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.faq-form-full {
+    grid-column: 1 / -1;
+}
+
+.faq-answer-textarea {
+    min-height: 110px;
+    resize: vertical;
+}
+
+.faq-form-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+@media (max-width: 640px) {
+    .faq-add-form {
+        padding: 1.25rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .faq-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .faq-form-full {
+        grid-column: 1;
+    }
+
+    .faq-form-actions {
+        flex-direction: column;
+    }
+
+    .faq-form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
 }
