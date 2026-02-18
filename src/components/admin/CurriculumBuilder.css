@@ -175,6 +175,27 @@
     color: var(--text-muted);
 }
 
+.lesson-order-actions {
+    display: flex;
+    gap: 0.25rem;
+    margin: 0 0.5rem;
+}
+
+.lesson-order-actions .icon-btn {
+    padding: 2px !important;
+    color: var(--text-muted);
+}
+
+.lesson-order-actions .icon-btn:hover:not(:disabled) {
+    color: var(--primary);
+    background: white;
+}
+
+.lesson-order-actions .icon-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
 /* Lesson Content Fields */
 .lesson-content-field {
     margin-top: 0.5rem;

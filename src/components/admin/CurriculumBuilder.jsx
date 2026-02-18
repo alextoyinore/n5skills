@@ -132,7 +132,7 @@ const CurriculumBuilder = ({ modules, setModules }) => {
                     lessons: [...m.lessons, {
                         id: Date.now() + Math.random(), // Ensure unique ID
                         title: 'New Lesson',
-                        type: type, // 'video', 'reading'
+                        type: 'video', // Unified type by default
                         duration: '0:00',
                         video_url: '',
                         reading_content: '',
@@ -163,6 +163,22 @@ const CurriculumBuilder = ({ modules, setModules }) => {
                     ...m,
                     lessons: m.lessons.map(l => l.id === lessonId ? { ...l, ...updates } : l)
                 };
+            }
+            return m;
+        }));
+    };
+
+    const moveLesson = (moduleId, lessonId, direction) => {
+        setModules(modules.map(m => {
+            if (m.id === moduleId) {
+                const index = m.lessons.findIndex(l => l.id === lessonId);
+                if ((direction === 'up' && index === 0) || (direction === 'down' && index === m.lessons.length - 1)) {
+                    return m;
+                }
+                const newLessons = [...m.lessons];
+                const targetIndex = direction === 'up' ? index - 1 : index + 1;
+                [newLessons[index], newLessons[targetIndex]] = [newLessons[targetIndex], newLessons[index]];
+                return { ...m, lessons: newLessons };
             }
             return m;
         }));
@@ -221,6 +237,24 @@ const CurriculumBuilder = ({ modules, setModules }) => {
                                                     placeholder="Duration"
                                                     onChange={(e) => updateLesson(module.id, lesson.id, { duration: e.target.value })}
                                                 />
+                                                <div className="lesson-order-actions">
+                                                    <button
+                                                        className="icon-btn"
+                                                        onClick={() => moveLesson(module.id, lesson.id, 'up')}
+                                                        disabled={lIndex === 0}
+                                                        title="Move Up"
+                                                    >
+                                                        <ChevronUp size={14} />
+                                                    </button>
+                                                    <button
+                                                        className="icon-btn"
+                                                        onClick={() => moveLesson(module.id, lesson.id, 'down')}
+                                                        disabled={lIndex === module.lessons.length - 1}
+                                                        title="Move Down"
+                                                    >
+                                                        <ChevronDown size={14} />
+                                                    </button>
+                                                </div>
                                                 <button className="icon-btn delete" onClick={() => removeLesson(module.id, lesson.id)}>
                                                     <Trash2 size={14} />
                                                 </button>
@@ -239,15 +273,15 @@ const CurriculumBuilder = ({ modules, setModules }) => {
                                                 </div>
                                             )}
 
-                                            {lesson.type === 'reading' && (
+                                            {(lesson.type === 'reading' || lesson.type === 'video') && (
                                                 <div className="lesson-content-field">
-                                                    <label>Reading Content (Markdown)</label>
+                                                    <label>{lesson.type === 'video' ? 'Attached Reading (Optional)' : 'Reading Content (Markdown)'}</label>
                                                     <div className="markdown-editor">
                                                         <textarea
                                                             placeholder="# Heading&#10;&#10;Write your lesson content in **markdown**..."
                                                             value={lesson.reading_content || ''}
                                                             onChange={(e) => updateLesson(module.id, lesson.id, { reading_content: e.target.value })}
-                                                            rows={8}
+                                                            rows={6}
                                                         />
                                                         {lesson.reading_content && (
                                                             <div className="markdown-preview">

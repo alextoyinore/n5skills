@@ -3,6 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { Play, CheckCircle, ChevronLeft, ChevronRight, MessageSquare, FileText, Settings, Maximize, Clock, SkipForward, Loader2, Menu, X, LayoutDashboard, BarChart, Calendar, Mail, Twitter, Linkedin, Github, Globe } from 'lucide-react';
 import { supabase } from '../../utils/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import './CoursePlayer.css';
 
 const CoursePlayer = () => {
@@ -258,7 +260,11 @@ const CoursePlayer = () => {
                         <h3>About this Lesson</h3>
                         <div className="reading-content mt-4">
                             {lesson?.reading_content ? (
-                                <div dangerouslySetInnerHTML={{ __html: lesson.reading_content }} />
+                                <div className="markdown-content">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {lesson.reading_content}
+                                    </ReactMarkdown>
+                                </div>
                             ) : (
                                 <p>Welcome to <strong>{lesson?.title}</strong>. In this lesson, we'll dive deep into the core concepts and practical applications. Focus on understanding the "why" behind the techniques shown.</p>
                             )}
@@ -672,7 +678,7 @@ const CoursePlayer = () => {
 
                         return (
                             <>
-                                {currentLessonData?.content_type !== 'reading' && (
+                                {currentLessonData?.video_url && (
                                     <div className="video-viewport">
                                         <div className="video-mock glass-card border-0">
                                             {currentLessonData?.video_url ? (

@@ -194,7 +194,7 @@ const CourseCreateView = () => {
                         title: lesson.title,
                         content_type: lesson.type,
                         video_url: lesson.type === 'video' ? lesson.video_url : null,
-                        reading_content: lesson.type === 'reading' ? lesson.reading_content : null,
+                        reading_content: lesson.reading_content || null,
                         duration: lesson.duration,
                         order_index: lIndex
                     }));
@@ -282,7 +282,7 @@ const CourseCreateView = () => {
                         title: lesson.title,
                         content_type: lesson.type,
                         video_url: lesson.type === 'video' ? lesson.video_url : null,
-                        reading_content: lesson.type === 'reading' ? lesson.reading_content : null,
+                        reading_content: lesson.reading_content || null,
                         duration: lesson.duration,
                         order_index: lIndex
                     }));
