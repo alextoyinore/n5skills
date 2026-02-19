@@ -8,7 +8,8 @@ const SettingsView = () => {
         platform_name: '',
         support_email: '',
         logo_url: null,
-        enable_oauth: true
+        enable_oauth: true,
+        free_lesson_limit: 5
     });
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -67,6 +68,7 @@ const SettingsView = () => {
                     support_email: settings.support_email,
                     logo_url: settings.logo_url,
                     enable_oauth: settings.enable_oauth,
+                    free_lesson_limit: parseInt(settings.free_lesson_limit) || 5,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', settings.id);
@@ -186,6 +188,28 @@ const SettingsView = () => {
                                     fontFamily: 'inherit'
                                 }}
                             />
+                        </div>
+                        <div className="form-group">
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Free Lesson Limit (Paid Courses)</label>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="50"
+                                    value={settings.free_lesson_limit}
+                                    onChange={(e) => setSettings({ ...settings, free_lesson_limit: e.target.value })}
+                                    style={{
+                                        width: '100px',
+                                        padding: '0.75rem',
+                                        borderRadius: '8px',
+                                        border: '1px solid #E2E8F0',
+                                        fontFamily: 'inherit'
+                                    }}
+                                />
+                                <span style={{ fontSize: '0.9rem', color: '#64748B' }}>
+                                    Number of lessons accessible for free in non-free courses.
+                                </span>
+                            </div>
                         </div>
                         <div className="form-group" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
                             <div>

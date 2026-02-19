@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Play, CheckCircle, ChevronLeft, ChevronRight, MessageSquare, FileText, Settings, Maximize, Clock, SkipForward, Loader2, Menu, X, LayoutDashboard, BarChart, Calendar, Mail, Twitter, Linkedin, Github, Globe } from 'lucide-react';
+import { Play, CheckCircle, ChevronLeft, ChevronRight, MessageSquare, FileText, Settings, Maximize, Clock, SkipForward, Loader2, Menu, X, LayoutDashboard, BarChart, Calendar, Mail, Twitter, Linkedin, Github, Globe, Lock, ExternalLink } from 'lucide-react';
 import { supabase } from '../../utils/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import ReactMarkdown from 'react-markdown';
@@ -20,6 +20,7 @@ const CoursePlayer = () => {
     const [isUnlocked, setIsUnlocked] = useState(false);
     const [unlockPin, setUnlockPin] = useState('');
     const [isUnlocking, setIsUnlocking] = useState(false);
+    const [freeLessonLimit, setFreeLessonLimit] = useState(5);
 
     const [resources, setResources] = useState([]);
     const [discussions, setDiscussions] = useState([]);
@@ -159,6 +160,15 @@ const CoursePlayer = () => {
                 if (completions) {
                     setCompletedLessons(completions.map(c => c.lesson_id));
                 }
+            }
+
+            // 5. Fetch Platform Settings (Limit)
+            const { data: pSettings } = await supabase
+                .from('platform_settings')
+                .select('free_lesson_limit')
+                .single();
+            if (pSettings?.free_lesson_limit !== undefined) {
+                setFreeLessonLimit(pSettings.free_lesson_limit);
             }
         } catch (error) {
             console.error('Error fetching course player data:', error);
@@ -636,17 +646,17 @@ const CoursePlayer = () => {
                         const isRestricted = !isUnlocked &&
                             course?.price > 0 &&
                             user?.role === 'student' &&
-                            currentLessonIndex >= 10;
+                            currentLessonIndex >= freeLessonLimit;
 
                         if (isRestricted) {
                             return (
                                 <div className="restricted-overlay glass-card">
                                     <div className="restricted-content">
                                         <div className="lock-icon-bg">
-                                            <Maximize size={48} className="text-primary" />
+                                            <Lock size={48} className="text-primary" />
                                         </div>
                                         <h2>Unlock Full Course Access</h2>
-                                        <p>You've reached the end of the free trial (first 10 lessons). To continue learning and access all {allLessons.length} lessons, please unlock the full course with a PIN.</p>
+                                        <p>You've reached the end of the free trial (first {freeLessonLimit} lessons). To continue learning and access all {allLessons.length} lessons, please unlock the full course with a PIN.</p>
 
                                         <div className="gumroad-cta">
                                             <p>Don't have a PIN yet?</p>

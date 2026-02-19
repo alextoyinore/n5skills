@@ -461,9 +461,14 @@ const CourseDetail = () => {
                 <aside className="detail-sidebar-editorial">
                     <div className="sticky-cta">
                         <div className="cta-pricing">
-                            <span className="current-price">Free</span>
-                            {/* <span className="original-price">$99.00</span>
-                            <span className="discount-badge">100% OFF</span> */}
+                            {course.is_free || course.price == 0 ? (
+                                <span className="current-price">Free</span>
+                            ) : (
+                                <>
+                                    <span className="current-price">${course.price}</span>
+                                    {/* Optional: Show original price if you add a sale_price or original_price column later */}
+                                </>
+                            )}
                         </div>
 
                         <div className="cta-actions">
