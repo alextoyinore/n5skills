@@ -79,6 +79,33 @@ const AdminDashboard = () => {
         }
     };
 
+    // Permission check helper
+    const hasPermission = (userRole, tabId) => {
+        if (userRole === 'superadmin') return true;
+
+        // Restrictions for Instructors
+        if (userRole === 'instructor') {
+            const forbidden = ['users', 'pins', 'messages', 'reviews', 'faqs', 'settings', 'contact-submissions'];
+            return !forbidden.includes(tabId);
+        }
+
+        // Restrictions for Admins
+        if (userRole === 'admin') {
+            const forbidden = ['users', 'pins'];
+            return !forbidden.includes(tabId);
+        }
+
+        return false;
+    };
+
+    // Safety redirect if trying to access restricted URL directly
+    useEffect(() => {
+        if (user && !hasPermission(user.role, activeTab)) {
+            console.warn(`Unauthorized access attempt to ${activeTab} by ${user.role}. Redirecting...`);
+            navigate('/admin/dashboard', { replace: true });
+        }
+    }, [activeTab, user, navigate]);
+
     const toggleSidebar = () => {
         setSidebarOpen(!isSidebarOpen);
     };
@@ -91,11 +118,11 @@ const AdminDashboard = () => {
         { id: 'users', label: 'Users', icon: Users, path: '/admin/users' },
         { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
         { id: 'pins', label: 'PIN Management', icon: Key, path: '/admin/pins' },
-        { id: 'reviews', label: 'Reviews', icon: Star, path: '/admin/reviews' }, // Added
-        { id: 'faqs', label: 'FAQs', icon: HelpCircle, path: '/admin/faqs' }, // Added
-        { id: 'contact-submissions', label: 'Messages', icon: MessageSquare, path: '/admin/contact-submissions' }, // Added
+        { id: 'reviews', label: 'Reviews', icon: Star, path: '/admin/reviews' },
+        { id: 'faqs', label: 'FAQs', icon: HelpCircle, path: '/admin/faqs' },
+        { id: 'contact-submissions', label: 'Messages', icon: MessageSquare, path: '/admin/contact-submissions' },
         { id: 'settings', label: 'Settings', icon: Settings, path: '/admin/settings' },
-    ];
+    ].filter(item => hasPermission(user?.role, item.id));
 
     return (
         <div className="admin-dashboard">
@@ -187,7 +214,11 @@ const AdminDashboard = () => {
                         </div>
                         <div className="admin-info">
                             <h4>{user?.name || 'Admin'}</h4>
-                            <p>{user?.role === 'admin' ? 'Administrator' : 'Instructor'}</p>
+                            <p>
+                                {user?.role === 'superadmin' ? 'Super Admin' :
+                                    user?.role === 'admin' ? 'Administrator' :
+                                        user?.role === 'instructor' ? 'Instructor' : 'Staff'}
+                            </p>
                         </div>
                     </div>
                 </div>

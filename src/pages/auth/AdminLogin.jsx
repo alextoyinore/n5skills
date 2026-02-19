@@ -34,11 +34,12 @@ const AdminLogin = () => {
                 .eq('id', authUser.id)
                 .single();
 
-            if (profile?.role === 'admin') {
+            const allowedRoles = ['admin', 'superadmin', 'instructor'];
+            if (allowedRoles.includes(profile?.role)) {
                 navigate('/admin');
             } else {
                 await logout();
-                setError('Unauthorized access. Admin privileges required.');
+                setError('Unauthorized access. Administrative privileges required.');
             }
         } catch (err) {
             setError(err.message || 'Failed to sign in. Please check your credentials.');
