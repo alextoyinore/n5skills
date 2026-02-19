@@ -16,6 +16,7 @@ const CourseCreateView = () => {
     const [isUploading, setIsUploading] = useState(false);
     const [courseId, setCourseId] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [isInitialLoading, setIsInitialLoading] = useState(false);
     const [lastSaved, setLastSaved] = useState(null);
     const [courseData, setCourseData] = useState({
         title: '',
@@ -124,9 +125,12 @@ const CourseCreateView = () => {
             } catch (error) {
                 console.error('Error loading course:', error);
                 alert('Failed to load course data: ' + error.message);
+            } finally {
+                setIsInitialLoading(false);
             }
         };
 
+        setIsInitialLoading(true);
         loadCourseData();
     }, [id]);
 
@@ -186,9 +190,19 @@ const CourseCreateView = () => {
                 const stateModuleIds = modules.map(m => m.id).filter(id => typeof id === 'string');
                 const deletedModuleIds = dbModules?.filter(m => !stateModuleIds.includes(m.id)).map(m => m.id) || [];
 
-                if (deletedModuleIds.length > 0) {
+                if (deletedModuleIds.length > 0 && !isInitialLoading) {
                     const { error: delError } = await supabase.from('course_modules').delete().in('id', deletedModuleIds);
                     if (delError) throw delError;
+                }
+
+                // --- PASS 1: CLEAR MODULE INDICES ---
+                // Set temporary negative indices to avoid unique constraint violations during reordering
+                // We use individual updates to avoid erasing other columns which upsert would do.
+                const modulesToClear = modules.filter(m => typeof m.id === 'string');
+                if (modulesToClear.length > 0) {
+                    await Promise.all(modulesToClear.map((m, index) =>
+                        supabase.from('course_modules').update({ order_index: -(index + 1) }).eq('id', m.id)
+                    ));
                 }
 
                 for (let i = 0; i < modules.length; i++) {
@@ -215,9 +229,17 @@ const CourseCreateView = () => {
                     const stateLessonIds = module.lessons.map(l => l.id).filter(id => typeof id === 'string');
                     const deletedLessonIds = dbLessons?.filter(l => !stateLessonIds.includes(l.id)).map(l => l.id) || [];
 
-                    if (deletedLessonIds.length > 0) {
+                    if (deletedLessonIds.length > 0 && !isInitialLoading) {
                         const { error: lessonDelError } = await supabase.from('course_lessons').delete().in('id', deletedLessonIds);
                         if (lessonDelError) throw lessonDelError;
+                    }
+
+                    // --- PASS 1: CLEAR LESSON INDICES ---
+                    const lessonsToClear = module.lessons.filter(l => typeof l.id === 'string');
+                    if (lessonsToClear.length > 0) {
+                        await Promise.all(lessonsToClear.map((l, index) =>
+                            supabase.from('course_lessons').update({ order_index: -(index + 1) }).eq('id', l.id)
+                        ));
                     }
 
                     const updatedLessons = [];
@@ -557,6 +579,7 @@ const CourseCreateView = () => {
                             <div className="button-group">
                                 <button
                                     className="btn btn-primary"
+                                    disabled={isInitialLoading}
                                     onClick={async () => {
                                         console.log('Next Step button clicked, current step:', step);
                                         try {
@@ -572,7 +595,7 @@ const CourseCreateView = () => {
                                         }
                                     }}
                                 >
-                                    Next Step: Curriculum
+                                    {isInitialLoading ? 'Loading existing content...' : 'Next Step: Curriculum'}
                                 </button>
                             </div>
                         </motion.div>

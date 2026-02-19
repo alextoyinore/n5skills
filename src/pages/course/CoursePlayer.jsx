@@ -267,7 +267,7 @@ const CoursePlayer = () => {
             case 'overview':
                 return (
                     <div className="p-tab-panel">
-                        <h3>About this Lesson</h3>
+                        {!lesson?.reading_content && <h3>About this Lesson</h3>}
                         <div className="reading-content mt-4">
                             {lesson?.reading_content ? (
                                 <div className="markdown-content">
@@ -275,6 +275,10 @@ const CoursePlayer = () => {
                                         {lesson.reading_content}
                                     </ReactMarkdown>
                                 </div>
+                            ) : lesson?.description ? (
+                                <p style={{ lineHeight: '1.7', color: 'var(--text-secondary)', fontSize: '1.05rem' }}>
+                                    {lesson.description}
+                                </p>
                             ) : (
                                 <p>Welcome to <strong>{lesson?.title}</strong>. In this lesson, we'll dive deep into the core concepts and practical applications. Focus on understanding the "why" behind the techniques shown.</p>
                             )}
