@@ -97,16 +97,26 @@ const CourseCreateView = () => {
 
                 // Transform modules data
                 const transformedModules = modulesData.map(module => ({
+                    id: module.id,
                     title: module.title,
+                    description: module.description || '',
                     lessons: module.course_lessons
                         .sort((a, b) => a.order_index - b.order_index)
                         .map(lesson => ({
+                            id: lesson.id,
                             title: lesson.title,
                             type: lesson.content_type,
                             video_url: lesson.video_url || '',
+                            description: lesson.description || '',
                             reading_content: lesson.reading_content || '',
                             duration: lesson.duration,
-                            resources: lesson.lesson_resources || []
+                            resources: (lesson.lesson_resources || []).map(res => ({
+                                id: res.id,
+                                title: res.title,
+                                file_url: res.file_url,
+                                file_type: res.file_type,
+                                file_size: res.file_size
+                            }))
                         }))
                 }));
 
@@ -146,12 +156,12 @@ const CourseCreateView = () => {
         try {
             setIsSaving(true);
 
-            // Use user from context instead of async call
-            console.log('Checking auth user from context:', authUser);
+            // Use user from context
             if (!authUser || !authUser.id) {
-                console.error('No user found in context');
                 throw new Error('You must be logged in to save a course');
             }
+
+            const updatedModules = [];
 
             if (courseId) {
                 console.log('Updating existing draft, courseId:', courseId);
@@ -171,67 +181,103 @@ const CourseCreateView = () => {
 
                 if (courseError) throw courseError;
 
-                // Delete existing modules and lessons, then re-insert
-                await supabase.from('course_modules').delete().eq('course_id', courseId);
+                // --- SMART SYNC MODULES ---
+                const { data: dbModules } = await supabase.from('course_modules').select('id').eq('course_id', courseId);
+                const stateModuleIds = modules.map(m => m.id).filter(id => typeof id === 'string');
+                const deletedModuleIds = dbModules?.filter(m => !stateModuleIds.includes(m.id)).map(m => m.id) || [];
 
-                // Save modules & lessons
+                if (deletedModuleIds.length > 0) {
+                    const { error: delError } = await supabase.from('course_modules').delete().in('id', deletedModuleIds);
+                    if (delError) throw delError;
+                }
+
                 for (let i = 0; i < modules.length; i++) {
                     const module = modules[i];
-                    const { data: savedModule, error: moduleError } = await supabase
-                        .from('course_modules')
-                        .insert([{
-                            course_id: courseId,
-                            title: module.title,
-                            order_index: i
-                        }])
-                        .select()
-                        .single();
+                    let moduleId = module.id;
+                    const modulePayload = {
+                        course_id: courseId,
+                        title: module.title,
+                        description: module.description,
+                        order_index: i
+                    };
 
-                    if (moduleError) throw moduleError;
-
-                    const lessonsToSave = module.lessons.map((lesson, lIndex) => ({
-                        module_id: savedModule.id,
-                        title: lesson.title,
-                        content_type: lesson.type,
-                        video_url: lesson.type === 'video' ? lesson.video_url : null,
-                        reading_content: lesson.reading_content || null,
-                        duration: lesson.duration,
-                        order_index: lIndex
-                    }));
-
-                    if (lessonsToSave.length > 0) {
-                        const { data: savedLessons, error: lessonsError } = await supabase
-                            .from('course_lessons')
-                            .insert(lessonsToSave)
-                            .select();
-                        if (lessonsError) throw lessonsError;
-
-                        // Save resources for each lesson
-                        for (let l = 0; l < savedLessons.length; l++) {
-                            const savedLesson = savedLessons[l];
-                            const originalLesson = module.lessons[l];
-
-                            if (originalLesson.resources && originalLesson.resources.length > 0) {
-                                const resourcesToSave = originalLesson.resources.map(res => ({
-                                    lesson_id: savedLesson.id,
-                                    title: res.title,
-                                    file_url: res.file_url,
-                                    file_type: res.file_type,
-                                    file_size: res.file_size
-                                }));
-
-                                const { error: resError } = await supabase
-                                    .from('lesson_resources')
-                                    .insert(resourcesToSave);
-                                if (resError) throw resError;
-                            }
-                        }
+                    if (typeof moduleId === 'string') {
+                        const { error: modUpdateError } = await supabase.from('course_modules').update(modulePayload).eq('id', moduleId);
+                        if (modUpdateError) throw modUpdateError;
+                    } else {
+                        const { data: savedMod, error: modInsertError } = await supabase.from('course_modules').insert([modulePayload]).select().single();
+                        if (modInsertError) throw modInsertError;
+                        moduleId = savedMod.id;
                     }
+
+                    // --- SMART SYNC LESSONS ---
+                    const { data: dbLessons } = await supabase.from('course_lessons').select('id').eq('module_id', moduleId);
+                    const stateLessonIds = module.lessons.map(l => l.id).filter(id => typeof id === 'string');
+                    const deletedLessonIds = dbLessons?.filter(l => !stateLessonIds.includes(l.id)).map(l => l.id) || [];
+
+                    if (deletedLessonIds.length > 0) {
+                        const { error: lessonDelError } = await supabase.from('course_lessons').delete().in('id', deletedLessonIds);
+                        if (lessonDelError) throw lessonDelError;
+                    }
+
+                    const updatedLessons = [];
+                    for (let lIndex = 0; lIndex < module.lessons.length; lIndex++) {
+                        const lesson = module.lessons[lIndex];
+                        let lessonId = lesson.id;
+                        const lessonPayload = {
+                            module_id: moduleId,
+                            title: lesson.title,
+                            description: lesson.description,
+                            content_type: lesson.type,
+                            video_url: lesson.video_url || null,
+                            reading_content: lesson.reading_content || null,
+                            duration: lesson.duration,
+                            order_index: lIndex
+                        };
+
+                        if (typeof lessonId === 'string') {
+                            const { error: lessonUpdateError } = await supabase.from('course_lessons').update(lessonPayload).eq('id', lessonId);
+                            if (lessonUpdateError) throw lessonUpdateError;
+                        } else {
+                            const { data: savedLesson, error: lessonInsertError } = await supabase.from('course_lessons').insert([lessonPayload]).select().single();
+                            if (lessonInsertError) throw lessonInsertError;
+                            lessonId = savedLesson.id;
+                        }
+
+                        // --- SMART SYNC RESOURCES ---
+                        const { data: dbRes } = await supabase.from('lesson_resources').select('id').eq('lesson_id', lessonId);
+                        const stateResIds = (lesson.resources || []).map(r => r.id).filter(id => typeof id === 'string');
+                        const deletedResIds = dbRes?.filter(r => !stateResIds.includes(r.id)).map(r => r.id) || [];
+
+                        if (deletedResIds.length > 0) {
+                            await supabase.from('lesson_resources').delete().in('id', deletedResIds);
+                        }
+
+                        const updatedResources = [];
+                        for (const res of (lesson.resources || [])) {
+                            const resPayload = {
+                                lesson_id: lessonId,
+                                title: res.title,
+                                file_url: res.file_url,
+                                file_type: res.file_type,
+                                file_size: res.file_size
+                            };
+
+                            let resId = res.id;
+                            if (typeof resId === 'string') {
+                                await supabase.from('lesson_resources').update(resPayload).eq('id', resId);
+                            } else {
+                                const { data: savedRes } = await supabase.from('lesson_resources').insert([resPayload]).select().single();
+                                resId = savedRes.id;
+                            }
+                            updatedResources.push({ ...res, id: resId });
+                        }
+                        updatedLessons.push({ ...lesson, id: lessonId, resources: updatedResources });
+                    }
+                    updatedModules.push({ ...module, id: moduleId, lessons: updatedLessons });
                 }
             } else {
                 console.log('Creating new draft');
-
-                // Log the data we're about to insert
                 const courseDataToInsert = {
                     title: courseData.title || 'Untitled Course',
                     description: courseData.description,
@@ -243,26 +289,16 @@ const CourseCreateView = () => {
                     highlights: highlights.length > 0 ? highlights : null,
                     status: 'draft'
                 };
-                console.log('Data to insert:', courseDataToInsert);
 
-                console.log('Calling supabase.from(courses).insert...');
-                // Create new draft
                 const { data: course, error: courseError } = await supabase
                     .from('courses')
                     .insert([courseDataToInsert])
                     .select()
                     .single();
 
-                console.log('INSERT completed, response:', { course, courseError });
-
-                if (courseError) {
-                    console.error('Course creation error:', courseError);
-                    throw courseError;
-                }
-                console.log('Course created:', course);
+                if (courseError) throw courseError;
                 setCourseId(course.id);
 
-                // Save modules & lessons
                 for (let i = 0; i < modules.length; i++) {
                     const module = modules[i];
                     const { data: savedModule, error: moduleError } = await supabase
@@ -270,6 +306,7 @@ const CourseCreateView = () => {
                         .insert([{
                             course_id: course.id,
                             title: module.title,
+                            description: module.description,
                             order_index: i
                         }])
                         .select()
@@ -277,51 +314,56 @@ const CourseCreateView = () => {
 
                     if (moduleError) throw moduleError;
 
-                    const lessonsToSave = module.lessons.map((lesson, lIndex) => ({
-                        module_id: savedModule.id,
-                        title: lesson.title,
-                        content_type: lesson.type,
-                        video_url: lesson.type === 'video' ? lesson.video_url : null,
-                        reading_content: lesson.reading_content || null,
-                        duration: lesson.duration,
-                        order_index: lIndex
-                    }));
-
-                    if (lessonsToSave.length > 0) {
-                        const { data: savedLessons, error: lessonsError } = await supabase
+                    const updatedLessons = [];
+                    for (let lIndex = 0; lIndex < module.lessons.length; lIndex++) {
+                        const lesson = module.lessons[lIndex];
+                        const { data: savedLesson, error: lessonError } = await supabase
                             .from('course_lessons')
-                            .insert(lessonsToSave)
-                            .select();
-                        if (lessonsError) throw lessonsError;
+                            .insert([{
+                                module_id: savedModule.id,
+                                title: lesson.title,
+                                description: lesson.description,
+                                content_type: lesson.type,
+                                video_url: lesson.video_url || null,
+                                reading_content: lesson.reading_content || null,
+                                duration: lesson.duration,
+                                order_index: lIndex
+                            }])
+                            .select()
+                            .single();
 
-                        // Save resources for each lesson
-                        for (let l = 0; l < savedLessons.length; l++) {
-                            const savedLesson = savedLessons[l];
-                            const originalLesson = module.lessons[l];
+                        if (lessonError) throw lessonError;
 
-                            if (originalLesson.resources && originalLesson.resources.length > 0) {
-                                const resourcesToSave = originalLesson.resources.map(res => ({
-                                    lesson_id: savedLesson.id,
-                                    title: res.title,
-                                    file_url: res.file_url,
-                                    file_type: res.file_type,
-                                    file_size: res.file_size
-                                }));
-
-                                const { error: resError } = await supabase
+                        const updatedResources = [];
+                        if (lesson.resources && lesson.resources.length > 0) {
+                            for (const res of lesson.resources) {
+                                const { data: savedRes, error: resError } = await supabase
                                     .from('lesson_resources')
-                                    .insert(resourcesToSave);
+                                    .insert([{
+                                        lesson_id: savedLesson.id,
+                                        title: res.title,
+                                        file_url: res.file_url,
+                                        file_type: res.file_type,
+                                        file_size: res.file_size
+                                    }])
+                                    .select()
+                                    .single();
                                 if (resError) throw resError;
+                                updatedResources.push({ ...res, id: savedRes.id });
                             }
                         }
+                        updatedLessons.push({ ...lesson, id: savedLesson.id, resources: updatedResources });
                     }
+                    updatedModules.push({ ...module, id: savedModule.id, lessons: updatedLessons });
                 }
             }
 
+            setModules(updatedModules);
             setLastSaved(new Date());
             console.log('=== saveDraft SUCCESS ===');
         } catch (error) {
             console.error('Auto-save Error:', error);
+            throw error;
         } finally {
             setIsSaving(false);
         }

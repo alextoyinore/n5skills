@@ -460,3 +460,49 @@
         transform: rotate(360deg);
     }
 }
+
+/* Module and Lesson Description Fields */
+.module-description-field {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: var(--radius-md);
+    border: 1px solid #e2e8f0;
+}
+
+.module-description-field label,
+.lesson-content-field label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.module-description-field textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    outline: none;
+    resize: vertical;
+    min-height: 80px;
+    transition: var(--transition);
+}
+
+.module-description-field textarea:focus,
+.lesson-content-field input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 43, 185, 0.1);
+}
+
+.lesson-content-field input[type="text"] {
+    width: 100%;
+    padding: 0.6rem;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    outline: none;
+    transition: var(--transition);
+}

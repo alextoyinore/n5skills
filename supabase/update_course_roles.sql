@@ -18,7 +18,7 @@ CREATE POLICY "Admins and Instructors can manage courses" ON courses
         EXISTS (
             SELECT 1 FROM profiles 
             WHERE profiles.id = auth.uid() 
-            AND profiles.role IN ('admin', 'instructor')
+            AND profiles.role IN ('admin', 'instructor', 'superadmin')
         )
     );
 
@@ -39,7 +39,7 @@ CREATE POLICY "Admins and Instructors can manage modules" ON course_modules
         EXISTS (
             SELECT 1 FROM profiles 
             WHERE profiles.id = auth.uid() 
-            AND profiles.role IN ('admin', 'instructor')
+            AND profiles.role IN ('admin', 'instructor', 'superadmin')
         )
     );
 

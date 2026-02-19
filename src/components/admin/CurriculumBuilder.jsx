@@ -120,19 +120,19 @@ const CurriculumBuilder = ({ modules, setModules }) => {
         setModules(modules.filter(m => m.id !== moduleId));
     };
 
-    const updateModuleTitle = (moduleId, title) => {
-        setModules(modules.map(m => m.id === moduleId ? { ...m, title } : m));
+    const updateModule = (moduleId, updates) => {
+        setModules(modules.map(m => m.id === moduleId ? { ...m, ...updates } : m));
     };
 
-    const addLesson = (moduleId, type) => {
+    const addLesson = (moduleId) => {
         setModules(modules.map(m => {
             if (m.id === moduleId) {
                 return {
                     ...m,
                     lessons: [...m.lessons, {
-                        id: Date.now() + Math.random(), // Ensure unique ID
+                        id: Date.now() + Math.random(),
                         title: 'New Lesson',
-                        type: 'video', // Unified type by default
+                        type: 'video',
                         duration: '0:00',
                         video_url: '',
                         reading_content: '',
@@ -203,7 +203,8 @@ const CurriculumBuilder = ({ modules, setModules }) => {
                                 <input
                                     className="module-title-input"
                                     value={module.title}
-                                    onChange={(e) => updateModuleTitle(module.id, e.target.value)}
+                                    placeholder="Module Title"
+                                    onChange={(e) => updateModule(module.id, { title: e.target.value })}
                                     onClick={(e) => e.stopPropagation()}
                                 />
                             </div>
@@ -218,6 +219,15 @@ const CurriculumBuilder = ({ modules, setModules }) => {
 
                         {activeModule === module.id && (
                             <div className="lessons-container">
+                                <div className="module-description-field">
+                                    <label>Module Description (Optional)</label>
+                                    <textarea
+                                        placeholder="Briefly describe what this module covers..."
+                                        value={module.description || ''}
+                                        onChange={(e) => updateModule(module.id, { description: e.target.value })}
+                                        rows={2}
+                                    />
+                                </div>
                                 <div className="lessons-list">
                                     {module.lessons.map((lesson, lIndex) => (
                                         <div key={lesson.id} className="lesson-item">
@@ -258,6 +268,17 @@ const CurriculumBuilder = ({ modules, setModules }) => {
                                                 <button className="icon-btn delete" onClick={() => removeLesson(module.id, lesson.id)}>
                                                     <Trash2 size={14} />
                                                 </button>
+                                            </div>
+
+                                            {/* Lesson Description */}
+                                            <div className="lesson-content-field">
+                                                <label>Lesson Description (Optional)</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Short summary of this lesson..."
+                                                    value={lesson.description || ''}
+                                                    onChange={(e) => updateLesson(module.id, lesson.id, { description: e.target.value })}
+                                                />
                                             </div>
 
                                             {/* Content Fields */}
