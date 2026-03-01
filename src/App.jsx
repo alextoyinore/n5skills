@@ -45,6 +45,8 @@ import { SettingsProvider } from './context/SettingsContext';
 import './App.css';
 
 import AdminLogin from './pages/auth/AdminLogin';
+import NotFoundPage from './pages/error/NotFoundPage';
+import ServerErrorPage from './pages/error/ServerErrorPage';
 
 function AppContent() {
   const location = useLocation();
@@ -133,6 +135,11 @@ function AppContent() {
           <Route path="/faqs" element={<Faqs />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:id" element={<BlogDetail />} />
+
+          {/* Error Routes */}
+          <Route path="/500" element={<ServerErrorPage />} />
+          {/* Catch-all 404 Route */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
       {!isSpecialRoute && <Footer />}
